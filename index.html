@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice Roller</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes rollShake {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-3px, 3px) rotate(-6deg); }
+            40% { transform: translate(3px, -3px) rotate(6deg); }
+            60% { transform: translate(-2px, 2px) rotate(-3deg); }
+            80% { transform: translate(2px, -2px) rotate(3deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+        @keyframes wowPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+            70% { transform: scale(1.03); box-shadow: 0 0 25px 10px rgba(168, 85, 247, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+        .rolling {
+            animation: rollShake 0.3s ease-in-out infinite;
+        }
+        .wow-effect {
+            animation: wowPulse 0.8s ease-in-out;
+        }
+        .glow-dot {
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.9), inset 0 0 2px rgba(255, 255, 255, 0.7);
+        }
+        .inactive-dot {
+            background-color: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col landscape:flex-row justify-between selection:bg-purple-500 selection:text-white overflow-x-hidden">
+
+    <header class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-b landscape:border-b-0 landscape:border-r border-slate-800/60 bg-slate-900/40 backdrop-blur-md sticky top-0 landscape:fixed landscape:left-0 z-40">
+        <div class="max-w-4xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-end gap-2">
+            <!-- Language Switcher: Horizontal in portrait, Vertical in landscape -->
+            <div id="langSwitcherContainer" class="flex landscape:flex-col items-center bg-slate-900 border border-slate-800 p-0.5 rounded-xl shadow-inner">
+                <button id="langUk" onclick="setLanguage('uk')" class="w-8 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center">UA</button>
+                <button id="langEn" onclick="setLanguage('en')" class="w-8 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center">EN</button>
+            </div>
+
+            <!-- Visual Mode Switcher: Horizontal in portrait, Vertical in landscape -->
+            <div id="modeSwitcherContainer" class="flex landscape:flex-col items-center bg-slate-900 border border-slate-800 p-0.5 rounded-xl shadow-inner">
+                <button id="modeDots" onclick="setVisualMode('dots')" class="px-2 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center" data-i18n-dots>Dots</button>
+                <button id="modeNums" onclick="setVisualMode('nums')" class="px-2 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center" data-i18n-nums>Numbers</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-4 landscape:pl-24 landscape:pr-4 flex flex-col gap-4">
+        
+        <!-- Results & Total Score Bar -->
+        <div id="scoreBarCard" class="flex items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 px-4 py-3 rounded-2xl backdrop-blur-sm transition-all duration-300">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span id="totalLabel" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total:</span>
+                    <span id="totalScore" class="text-xl sm:text-2xl font-black bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">0</span>
+                </div>
+                <!-- Wow effect badge -->
+                <div id="wowBadge" class="hidden items-center gap-1 bg-purple-600/30 border border-purple-500/50 px-2.5 py-0.5 rounded-full text-purple-300 text-[11px] font-bold animate-pulse">
+                    <span>🔥 <span id="wowText">Jackpot!</span></span>
+                </div>
+            </div>
+            <!-- Multi-select re-roll trigger button when items are selected -->
+            <div id="selectedActionContainer" class="hidden flex items-center gap-2">
+                <button onclick="rollSelectedDice()" id="rollSelectedBtn" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5">
+                    <span id="selectedCountBadge" class="bg-white/20 px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+                    <span data-i18n-reroll-selected>Re-roll Selected</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Multi-Dice Grid Area with responsive grid for up to 12 dice -->
+        <div class="flex-1 w-full flex items-center justify-center overflow-y-auto">
+            <div id="diceGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 landscape:grid-cols-4 lg:landscape:grid-cols-6 gap-2 items-center justify-center w-full pb-28 landscape:pb-4">
+                <!-- Initial Placeholder -->
+                <div class="col-span-full flex flex-col items-center justify-center text-slate-500 py-16 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">
+                    <svg class="w-8 h-8 mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <p class="text-xs" id="placeholderText">Click 'Roll' below</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-t landscape:border-t-0 landscape:border-l border-slate-800/80 bg-slate-900/80 backdrop-blur-md fixed landscape:right-0 bottom-0 z-40">
+        <div class="max-w-4xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-center gap-2 sm:gap-3 h-full">
+            
+            <!-- Minus / Plus Dice Count Adjuster -->
+            <div class="flex landscape:flex-col items-center bg-slate-950 border border-slate-800 rounded-2xl p-0.5 shadow-inner">
+                <button onclick="adjustDiceCount(-1)" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl font-bold text-base transition-all active:scale-95" title="Decrease">-</button>
+                <div class="px-2 landscape:px-0 landscape:py-1 text-center min-w-[28px]">
+                    <span id="bottomDiceCount" class="text-xs font-bold text-white">1</span>
+                </div>
+                <button onclick="adjustDiceCount(1)" class="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800/60 rounded-xl font-bold text-base transition-all active:scale-95" title="Increase">+</button>
+            </div>
+
+            <!-- Roll Button -->
+            <button onclick="rollDice()" id="rollBtn" class="flex-1 landscape:flex-none py-3 px-4 landscape:p-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] hover:bg-[position:right_center] text-white text-sm sm:text-base landscape:text-xs font-bold rounded-2xl shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                <span data-i18n-roll>Roll</span>
+            </button>
+
+            <!-- Settings Modal Trigger Button -->
+            <button onclick="toggleSettingsModal()" class="w-11 h-11 bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-2xl flex items-center justify-center transition-all shadow-md" title="Settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div id="settingsModal" class="fixed inset-0 pointer-events-none z-50 flex items-end landscape:items-center landscape:justify-end justify-center hidden">
+        <div class="pointer-events-auto bg-slate-900 border-t landscape:border-t-0 landscape:border-l border-x border-slate-800 rounded-t-3xl landscape:rounded-t-none landscape:rounded-l-3xl max-w-4xl landscape:max-w-sm w-full landscape:h-full p-6 shadow-2xl flex flex-col gap-5 max-h-[85vh] landscape:max-h-none overflow-y-auto transform translate-y-0 transition-transform duration-300">
+            <!-- Drag handle indicator (hidden in landscape) -->
+            <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto -mt-2 mb-1 landscape:hidden"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="modalTitle" class="text-sm font-bold text-white">Advanced Settings</h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Die Type Selection -->
+            <div class="flex flex-col gap-2">
+                <label id="facesLabel" class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Die Type (Faces)</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="setDieType(4)" id="btn-d4" class="py-2 rounded-xl border border-slate-800 bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-300">D4</button>
+                    <button onclick="setDieType(6)" id="btn-d6" class="py-2 rounded-xl border border-purple-500 bg-purple-600/20 text-purple-300 text-xs font-semibold shadow-sm shadow-purple-500/20 transition-all">D6</button>
+                    <button onclick="setDieType(9)" id="btn-d9" class="py-2 rounded-xl border border-slate-800 bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-300">D9</button>
+                    <button onclick="setDieType(20)" id="btn-d20" class="py-2 rounded-xl border border-slate-800 bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-300">D20</button>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                    <span id="customFacesLabel" class="text-xs text-slate-400">Custom faces (up to 64):</span>
+                    <input type="number" id="customFaces" min="2" max="64" value="6" onchange="onCustomFacesChange(this.value)" class="w-20 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-purple-500 text-center">
+                </div>
+            </div>
+
+            <!-- Allow Zero Setting -->
+            <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800/60 px-3 py-2.5 rounded-xl">
+                <div class="flex flex-col">
+                    <span id="allowZeroTitle" class="text-xs font-medium text-slate-300">Allow Zero (0)</span>
+                    <span id="allowZeroDesc" class="text-[10px] text-slate-500">If zero rolls — empty background</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="allowZeroToggle" onchange="updateSettingsSummary()" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+
+            <button onclick="toggleSettingsModal()" id="closeModalBtn" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-lg shadow-purple-600/30">
+                Save & Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let currentLang = 'en'; // Default language is English
+        let visualMode = 'dots'; // 'dots' or 'nums'
+        let dieFaces = 6;
+        let diceCount = 1;
+        let isRolling = false;
+        let diceResults = []; // Stores current values of all active dice
+        let selectedDiceIndices = new Set(); // Stores indices of selected dice for re-rolling
+
+        const translations = {
+            uk: {
+                dots: "Крапки",
+                nums: "Цифри",
+                total: "Сума:",
+                roll: "Кинути",
+                placeholder: "Натисніть «Кинути» нижче",
+                modalTitle: "Розширені налаштування",
+                facesLabel: "Тип кубика (Грані)",
+                customFaces: "Власні грані (до 64):",
+                allowZeroTitle: "Допустимий нуль (0)",
+                allowZeroDesc: "Якщо випаде нуль — буде порожній фон",
+                closeModal: "Зберегти та закрити",
+                rerollSelected: "Перекинути вибрані",
+                jackpot: "Джекпот! 🔥"
+            },
+            en: {
+                dots: "Dots",
+                nums: "Numbers",
+                total: "Total:",
+                roll: "Roll",
+                placeholder: "Click 'Roll' below",
+                modalTitle: "Advanced Settings",
+                facesLabel: "Die Type (Faces)",
+                customFaces: "Custom faces (up to 64):",
+                allowZeroTitle: "Allow Zero (0)",
+                allowZeroDesc: "If zero rolls — empty background",
+                closeModal: "Save & Close",
+                rerollSelected: "Re-roll Selected",
+                jackpot: "Jackpot! 🔥"
+            }
+        };
+
+        // Exact dot patterns for 3x3 grid matching the reference image (1 to 9)
+        const dotPatterns = {
+            1: [4],
+            2: [2, 6],
+            3: [2, 4, 6],
+            4: [0, 2, 6, 8],
+            5: [0, 2, 4, 6, 8],
+            6: [0, 2, 3, 5, 6, 8],
+            7: [0, 1, 2, 4, 6, 7, 8],
+            8: [0, 1, 2, 3, 5, 6, 7, 8],
+            9: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        };
+
+        // Loud, crisp Web Audio API sound effect generator for dice roll (simulating dice shaking and hitting a hard surface)
+        function playRollSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                // Master gain for high volume impact
+                const masterGain = ctx.createGain();
+                masterGain.gain.setValueAtTime(0.7, ctx.currentTime);
+                masterGain.connect(ctx.destination);
+
+                // Play 6 rapid rattle/impact hits
+                for (let i = 0; i < 6; i++) {
+                    const time = ctx.currentTime + i * 0.05 + Math.random() * 0.01;
+                    
+                    // Oscillator for wooden/plastic clack tone
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = i % 2 === 0 ? 'square' : 'triangle';
+                    osc.frequency.setValueAtTime(180 + Math.random() * 250, time);
+                    osc.frequency.exponentialRampToValueAtTime(60, time + 0.04);
+
+                    gain.gain.setValueAtTime(0.4, time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start(time);
+                    osc.stop(time + 0.04);
+                }
+
+                // Noise burst for table friction/rattle
+                const bufferSize = ctx.sampleRate * 0.25;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(1200, ctx.currentTime);
+                filter.Q.setValueAtTime(2.0, ctx.currentTime);
+
+                const noiseGain = ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.35, ctx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(masterGain);
+
+                noise.start(ctx.currentTime);
+
+            } catch (e) {
+                // Audio context might be restricted before user interaction
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        function setCookie(name, value, days = 30) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days*24*60*60*1000));
+            let expires = "expires="+ d.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            setCookie('dice_lang', lang, 30);
+            const t = translations[lang];
+
+            const safeSetText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            };
+
+            const safeQuerySetText = (selector, text) => {
+                const el = document.querySelector(selector);
+                if (el) el.innerText = text;
+            };
+
+            safeSetText('modeDots', t.dots);
+            safeSetText('modeNums', t.nums);
+            safeSetText('totalLabel', t.total);
+            safeQuerySetText('[data-i18n-roll]', t.roll);
+            safeQuerySetText('[data-i18n-reroll-selected]', t.rerollSelected);
+            safeSetText('placeholderText', t.placeholder);
+            safeSetText('modalTitle', t.modalTitle);
+            safeSetText('facesLabel', t.facesLabel);
+            safeSetText('customFacesLabel', t.customFaces);
+            safeSetText('allowZeroTitle', t.allowZeroTitle);
+            safeSetText('allowZeroDesc', t.allowZeroDesc);
+            safeSetText('closeModalBtn', t.closeModal);
+            safeSetText('wowText', t.jackpot);
+
+            const btnUk = document.getElementById('langUk');
+            const btnEn = document.getElementById('langEn');
+            if (lang === 'uk') {
+                if (btnUk) btnUk.className = "w-8 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center";
+                if (btnEn) btnEn.className = "w-8 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center";
+            } else {
+                if (btnEn) btnEn.className = "w-8 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center";
+                if (btnUk) btnUk.className = "w-8 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center";
+            }
+
+            updateSettingsSummary();
+        }
+
+        function updateSettingsSummary() {
+            const bdc = document.getElementById('bottomDiceCount');
+            if (bdc) bdc.innerText = diceCount;
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.toggle('hidden');
+            updateSettingsSummary();
+        }
+
+        function setVisualMode(mode) {
+            visualMode = mode;
+            const btnDots = document.getElementById('modeDots');
+            const btnNums = document.getElementById('modeNums');
+
+            if (mode === 'dots') {
+                if (btnDots) btnDots.className = "px-2 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center";
+                if (btnNums) btnNums.className = "px-2 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center";
+                if (dieFaces > 9) {
+                    setDieType(9);
+                }
+            } else {
+                if (btnNums) btnNums.className = "px-2 py-1 text-[11px] font-medium rounded-lg transition-all bg-purple-600 text-white shadow text-center";
+                if (btnDots) btnDots.className = "px-2 py-1 text-[11px] font-medium rounded-lg transition-all text-slate-400 hover:text-white text-center";
+            }
+            if (diceResults.length > 0) {
+                renderDiceGrid();
+            }
+        }
+
+        function setDieType(faces) {
+            if (visualMode === 'dots' && faces > 9) {
+                faces = 9;
+            }
+            dieFaces = faces;
+            const cf = document.getElementById('customFaces');
+            if (cf) cf.value = faces;
+
+            ['d4', 'd6', 'd9', 'd20'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (btn) {
+                    btn.className = "py-2 rounded-xl border border-slate-800 bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-300";
+                }
+            });
+            const activeBtn = document.getElementById(`btn-d${faces}`);
+            if (activeBtn) {
+                activeBtn.className = "py-2 rounded-xl border border-purple-500 bg-purple-600/20 text-purple-300 text-xs font-semibold shadow-sm shadow-purple-500/20 transition-all";
+            }
+            updateSettingsSummary();
+        }
+
+        function onCustomFacesChange(val) {
+            let num = parseInt(val);
+            if (isNaN(num)) num = 6;
+            if (num < 2) num = 2;
+            if (num > 64) num = 64;
+            if (visualMode === 'dots' && num > 9) num = 9;
+            dieFaces = num;
+            const cf = document.getElementById('customFaces');
+            if (cf) cf.value = num;
+            updateSettingsSummary();
+        }
+
+        function adjustDiceCount(delta) {
+            let newCount = diceCount + delta;
+            if (newCount < 1) newCount = 1;
+            if (newCount > 12) newCount = 12; // Max 12 dice
+            diceCount = newCount;
+            updateSettingsSummary();
+            rollDice();
+        }
+
+        function rollDice() {
+            if (isRolling) return;
+            isRolling = true;
+            selectedDiceIndices.clear();
+            updateSelectedUI();
+            playRollSound();
+            
+            const grid = document.getElementById('diceGrid');
+            const rollBtn = document.getElementById('rollBtn');
+            if (rollBtn) rollBtn.disabled = true;
+
+            const cards = grid.children;
+            for (let card of cards) {
+                card.classList.add('rolling');
+            }
+
+            setTimeout(() => {
+                const allowZeroToggle = document.getElementById('allowZeroToggle');
+                const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+                const minVal = allowZero ? 0 : 1;
+
+                diceResults = [];
+                for (let i = 0; i < diceCount; i++) {
+                    const result = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                    diceResults.push(result);
+                }
+
+                renderDiceGrid();
+                updateTotalScore();
+                checkWowEffect();
+                isRolling = false;
+                if (rollBtn) rollBtn.disabled = false;
+            }, 300);
+        }
+
+        function rollSelectedDice() {
+            if (isRolling || selectedDiceIndices.size === 0) return;
+            isRolling = true;
+            playRollSound();
+
+            const grid = document.getElementById('diceGrid');
+            const indicesToRoll = Array.from(selectedDiceIndices);
+
+            // Add rolling animation only to selected cards
+            indicesToRoll.forEach(idx => {
+                const card = grid.children[idx];
+                if (card) card.classList.add('rolling');
+            });
+
+            setTimeout(() => {
+                const allowZeroToggle = document.getElementById('allowZeroToggle');
+                const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+                const minVal = allowZero ? 0 : 1;
+
+                indicesToRoll.forEach(idx => {
+                    const result = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                    diceResults[idx] = result;
+                });
+
+                selectedDiceIndices.clear();
+                renderDiceGrid();
+                updateTotalScore();
+                checkWowEffect();
+                updateSelectedUI();
+                isRolling = false;
+            }, 300);
+        }
+
+        function toggleSelectDie(index, cardEl) {
+            if (selectedDiceIndices.has(index)) {
+                selectedDiceIndices.delete(index);
+                cardEl.classList.remove('border-purple-500', 'bg-purple-950/30');
+                cardEl.classList.add('border-slate-800/80');
+            } else {
+                selectedDiceIndices.add(index);
+                cardEl.classList.add('border-purple-500', 'bg-purple-950/30');
+                cardEl.classList.remove('border-slate-800/80');
+            }
+            updateSelectedUI();
+        }
+
+        function updateSelectedUI() {
+            const container = document.getElementById('selectedActionContainer');
+            const badge = document.getElementById('selectedCountBadge');
+            if (selectedDiceIndices.size > 0) {
+                container.classList.remove('hidden');
+                if (badge) badge.innerText = selectedDiceIndices.size;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function checkWowEffect() {
+            const wowBadge = document.getElementById('wowBadge');
+            const scoreBarCard = document.getElementById('scoreBarCard');
+
+            // Count frequencies of each number (excluding 0)
+            const counts = {};
+            diceResults.forEach(val => {
+                if (val !== 0) {
+                    counts[val] = (counts[val] || 0) + 1;
+                }
+            });
+
+            let maxFreq = 0;
+            for (let val in counts) {
+                if (counts[val] > maxFreq) {
+                    maxFreq = counts[val];
+                }
+            }
+
+            // Trigger "Wow" effect if 3 or more identical numbers are rolled
+            if (maxFreq >= 3 && diceResults.length >= 3) {
+                wowBadge.classList.remove('hidden');
+                wowBadge.classList.add('flex');
+                scoreBarCard.classList.add('wow-effect', 'border-purple-500');
+                setTimeout(() => {
+                    scoreBarCard.classList.remove('wow-effect');
+                }, 800);
+            } else {
+                wowBadge.classList.add('hidden');
+                wowBadge.classList.remove('flex');
+                scoreBarCard.classList.remove('border-purple-500');
+            }
+        }
+
+        function renderDiceGrid() {
+            const grid = document.getElementById('diceGrid');
+            grid.innerHTML = '';
+
+            diceResults.forEach((result, index) => {
+                const isSelected = selectedDiceIndices.has(index);
+                const card = document.createElement('div');
+                card.className = `bg-slate-900/80 border ${isSelected ? 'border-purple-500 bg-purple-950/30' : 'border-slate-800/80'} hover:border-purple-500/50 cursor-pointer rounded-2xl p-2 flex flex-col items-center justify-center gap-1 relative shadow-md transition-all group`;
+                card.title = currentLang === 'uk' ? "Натисніть, щоб виділити/зняти виділення" : "Click to select/deselect die";
+                card.onclick = (e) => {
+                    toggleSelectDie(index, card);
+                };
+
+                const headerTag = document.createElement('div');
+                headerTag.className = "text-[9px] uppercase font-semibold text-slate-500 tracking-wider flex items-center gap-1";
+                headerTag.innerHTML = `#${index + 1} <span class="opacity-0 group-hover:opacity-100 transition-opacity text-purple-400">✓</span>`;
+                card.appendChild(headerTag);
+
+                if (visualMode === 'dots') {
+                    const dotContainer = document.createElement('div');
+                    dotContainer.className = "w-12 h-12 sm:w-14 sm:h-14 bg-slate-950/80 rounded-xl border border-slate-800/80 p-1 grid grid-cols-3 grid-rows-3 gap-0.5 items-center justify-center shadow-inner";
+                    
+                    const activeIndices = dotPatterns[result] || [];
+
+                    for (let d = 0; d < 9; d++) {
+                        const dot = document.createElement('div');
+                        if (result === 0) {
+                            dot.className = "w-full h-full rounded-md inactive-dot transition-all";
+                        } else if (activeIndices.includes(d)) {
+                            dot.className = "w-full h-full rounded-md bg-indigo-200 glow-dot transition-all";
+                        } else {
+                            dot.className = "w-full h-full rounded-md inactive-dot transition-all";
+                        }
+                        dotContainer.appendChild(dot);
+                    }
+                    card.appendChild(dotContainer);
+
+                    const valLabel = document.createElement('div');
+                    valLabel.className = "text-[10px] font-bold text-slate-300 h-3 flex items-center";
+                    valLabel.innerText = result === 0 ? "—" : `${result}`;
+                    card.appendChild(valLabel);
+
+                } else {
+                    const numContainer = document.createElement('div');
+                    numContainer.className = "w-12 h-12 sm:w-14 sm:h-14 bg-slate-950/80 rounded-xl border border-slate-800/80 flex items-center justify-center shadow-inner";
+                    
+                    const numberDisplay = document.createElement('span');
+                    if (result === 0) {
+                        numberDisplay.className = "text-lg font-bold text-transparent";
+                        numberDisplay.innerText = "";
+                    } else {
+                        numberDisplay.className = "text-lg sm:text-xl font-extrabold bg-gradient-to-tr from-purple-400 to-indigo-300 bg-clip-text text-transparent";
+                        numberDisplay.innerText = result;
+                    }
+                    numContainer.appendChild(numberDisplay);
+                    card.appendChild(numContainer);
+
+                    const valLabel = document.createElement('div');
+                    valLabel.className = "text-[10px] font-bold text-slate-300 h-3 flex items-center";
+                    valLabel.innerText = result === 0 ? "—" : `${result}`;
+                    card.appendChild(valLabel);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        function updateTotalScore() {
+            let total = diceResults.reduce((acc, val) => acc + val, 0);
+            const totalScoreEl = document.getElementById('totalScore');
+            if (totalScoreEl) totalScoreEl.innerText = total;
+        }
+
+        // Expose functions globally for inline HTML event handlers
+        window.setLanguage = setLanguage;
+        window.setVisualMode = setVisualMode;
+        window.setDieType = setDieType;
+        window.onCustomFacesChange = onCustomFacesChange;
+        window.adjustDiceCount = adjustDiceCount;
+        window.rollDice = rollDice;
+        window.rollSelectedDice = rollSelectedDice;
+        window.toggleSettingsModal = toggleSettingsModal;
+        window.updateSettingsSummary = updateSettingsSummary;
+
+        window.onload = function() {
+            const savedLang = getCookie('dice_lang') || 'en';
+            setLanguage(savedLang);
+            rollDice();
+        };
+    </script>
+</body>
+</html>
