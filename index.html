@@ -55,11 +55,11 @@
 </head>
 <body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col landscape:flex-row justify-between selection:bg-purple-500 selection:text-white overflow-x-hidden transition-colors duration-300">
 
-    <!-- Top header -->
+    <!-- Top header (Left in landscape mode) -->
     <header class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-b landscape:border-b-0 landscape:border-r border-slate-200/80 dark:border-slate-800/60 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md sticky top-0 landscape:fixed landscape:left-0 z-50">
         <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-start gap-3">
             
-            <!-- Combined Controls Pill -->
+            <!-- Combined Controls Pill (Language, Visual Mode, History - Left only in landscape) -->
             <div class="flex landscape:flex-col items-center gap-1.5 p-1 bg-transparent border border-slate-300/40 dark:border-slate-800/50 rounded-2xl backdrop-blur-sm">
                 <!-- Language Toggle Button -->
                 <button id="langToggleBtn" onclick="toggleLanguage()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Switch Language">
@@ -75,22 +75,14 @@
 
                 <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
 
-                <!-- History Button -->
+                <!-- History Button (Now in left top bar / left panel in landscape) -->
                 <button onclick="toggleHistoryModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Action History">
-                    📜 <span data-i18n-history-btn>History</span>
+                    📜 <span class="hidden sm:inline" data-i18n-history-btn>History</span>
                 </button>
-
-                <div id="onlineBtnWrapper" class="contents">
-                    <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
-                    <!-- Online Multiplayer Room Button -->
-                    <button id="onlineRoomNavBtn" onclick="openOnlineModal()" class="w-8 h-8 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl flex items-center justify-center transition-all shadow-sm text-sm" title="Online Room">
-                        🌐
-                    </button>
-                </div>
             </div>
 
-            <!-- Header Quick Settings Icon (Landscape) -->
-            <div class="hidden landscape:block mt-auto pb-4">
+            <!-- Header Quick Settings Icon (Hidden in landscape left panel) -->
+            <div class="hidden landscape:hidden mt-auto pb-4">
                 <button onclick="toggleSettingsModal()" class="w-10 h-10 bg-slate-200/60 dark:bg-slate-800/60 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl flex items-center justify-center transition-all shadow-sm" title="Settings">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                 </button>
@@ -101,20 +93,6 @@
     <!-- Main Content Area -->
     <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 landscape:pl-24 landscape:pr-4 flex flex-col gap-4 mb-28 landscape:mb-0 relative z-10">
         
-        <!-- Online Status Banner -->
-        <div id="onlineStatusBanner" class="hidden items-center justify-between gap-3 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-medium text-emerald-700 dark:text-emerald-300">
-            <div class="flex items-center gap-2 truncate">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <span class="truncate"><span data-i18n-room-id-label>Room</span>: <strong id="currentRoomCodeDisplay" class="font-bold underline tracking-wider">---</strong></span>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <span id="roomPlayerBadge" class="bg-emerald-600/20 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full">Me: ---</span>
-                <button onclick="leaveRoom()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-xl transition-all flex items-center gap-1 shadow-sm" title="Exit Room">
-                    🚪 <span data-i18n-leave-room>Exit</span>
-                </button>
-            </div>
-        </div>
-
         <!-- Top Control Bar (Select All & Group Actions) -->
         <div id="scoreBarCard" class="flex items-center justify-between gap-2 bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl backdrop-blur-md transition-all duration-300 shadow-sm min-h-[52px] relative z-20">
             
@@ -158,7 +136,6 @@
         <!-- Active Player Concise Indicator -->
         <div id="playerTurnBanner" class="hidden items-center justify-center gap-1.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 relative z-20 transition-all">
             <span data-i18n-current-turn>Current Turn</span>: <span id="activePlayerNameDisplay" class="font-extrabold text-purple-600 dark:text-purple-400">Player 1</span>
-            <span id="myTurnWarning" class="hidden text-rose-500 font-bold ml-1 text-[11px]">(Not your turn!)</span>
         </div>
 
         <!-- Dice Grid Display Container -->
@@ -170,7 +147,7 @@
 
     </main>
 
-    <!-- Bottom navigation bar -->
+    <!-- Bottom navigation bar (Right in landscape mode) -->
     <nav class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-t landscape:border-t-0 landscape:border-l border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md fixed landscape:right-0 bottom-0 z-50 shadow-2xl landscape:shadow-none">
         <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-center gap-2 sm:gap-3 h-full">
             
@@ -195,7 +172,7 @@
             </button>
 
             <!-- Settings Modal Trigger Button -->
-            <button onclick="toggleSettingsModal()" class="w-11 h-11 bg-slate-200/70 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center transition-all shadow-md landscape:hidden shrink-0" title="Settings">
+            <button onclick="toggleSettingsModal()" class="w-11 h-11 bg-slate-200/70 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center transition-all shadow-md shrink-0" title="Settings">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             </button>
         </div>
@@ -221,39 +198,6 @@
             <div id="historyListContainer" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 min-h-[220px] max-h-[50vh]">
                 <div class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 font-medium" data-i18n-no-history>
                     No actions recorded yet.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Online Room Modal -->
-    <div id="onlineModal" class="fixed inset-0 pointer-events-none z-[70] flex items-center justify-center hidden bg-black/50 backdrop-blur-xs p-4">
-        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl flex flex-col gap-5">
-            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-online-title>Online Multiplayer Room</h3>
-                <button onclick="closeOnlineModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <div class="flex flex-col gap-4">
-                <div class="flex flex-col gap-2">
-                    <button onclick="createRoom()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs transition-all shadow-md flex items-center justify-center gap-2">
-                        ✨ <span data-i18n-create-room>Create My Room</span>
-                    </button>
-                </div>
-
-                <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-                    <span class="flex-shrink mx-4 text-[10px] uppercase font-semibold text-slate-400" data-i18n-or>or join existing</span>
-                    <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <input type="text" id="roomCodeInput" placeholder="Enter Room Code" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-emerald-500 font-bold uppercase text-center tracking-widest">
-                    <button onclick="joinRoom()" class="w-full py-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-all shadow-sm" data-i18n-join-room>
-                        Join Room
-                    </button>
                 </div>
             </div>
         </div>
@@ -313,8 +257,8 @@
 
                 <!-- Player Names Configurator -->
                 <div id="playerConfigContainer" class="hidden flex flex-col gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-players-list>Your Nickname / Player Name</span>
-                    <input type="text" id="playerNamesInput" oninput="onPlayerNamesCommaChange(this.value)" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 font-medium" placeholder="My Nickname">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-players-list>Player Names (comma separated, up to 8)</span>
+                    <input type="text" id="playerNamesInput" oninput="onPlayerNamesCommaChange(this.value)" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 font-medium" placeholder="Player 1, Player 2, Player 3">
                 </div>
             </div>
 
@@ -358,156 +302,6 @@
         </div>
     </div>
 
-    <!-- Firebase SDK Scripts & Core Sync Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        let db = null;
-        let auth = null;
-        let unsubscribeRoom = null;
-        let isRemoteUpdate = false;
-        let myClientId = null;
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dice-room-app';
-        let firebaseConfig = null;
-        
-        try {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                firebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
-            }
-        } catch (e) {
-            console.warn("Firebase config parse error:", e);
-        }
-
-        window.initFirebaseConnection = async function() {
-            if (!firebaseConfig) {
-                console.warn("⚠️ Firebase configuration is missing. Running in local standalone mode.");
-                return;
-            }
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                const user = auth.currentUser;
-                myClientId = user ? user.uid : 'client_' + Math.random().toString(36).substring(2, 9);
-                console.log("✅ Cloud synchronization active. Client ID:", myClientId);
-            } catch (e) {
-                console.warn("Firebase init error:", e);
-                myClientId = 'client_' + Math.random().toString(36).substring(2, 9);
-            }
-        };
-
-        window.getClientId = function() {
-            if (!myClientId) {
-                myClientId = 'client_' + Math.random().toString(36).substring(2, 9);
-            }
-            return myClientId;
-        };
-
-        window.syncStateToFirebase = async function() {
-            if (!db || !window.currentRoomId || isRemoteUpdate) return;
-            const clientId = window.getClientId();
-
-            try {
-                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', `room_${window.currentRoomId}`);
-                let clientName = window.getLocalPlayerName ? window.getLocalPlayerName() : 'Player';
-                
-                await setDoc(roomRef, {
-                    diceList: window.diceList,
-                    dieFaces: window.dieFaces,
-                    playerModeEnabled: window.playerModeEnabled,
-                    activePlayerIndex: window.activePlayerIndex,
-                    actionHistory: window.actionHistory,
-                    clients: {
-                        [clientId]: {
-                            name: clientName,
-                            lastUpdated: Date.now()
-                        }
-                    },
-                    updatedAt: Date.now()
-                }, { merge: true });
-            } catch (e) {
-                console.warn("Sync error:", e);
-            }
-        };
-
-        window.startListeningRoom = function(roomId) {
-            if (!db) {
-                console.warn("⚠️ Cloud database not initialized.");
-                return;
-            }
-            if (unsubscribeRoom) unsubscribeRoom();
-
-            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', `room_${roomId}`);
-            unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    isRemoteUpdate = true;
-
-                    if (data.diceList) window.diceList = data.diceList;
-                    if (data.dieFaces) {
-                        window.dieFaces = data.dieFaces;
-                        window.setDieTypeQuiet(data.dieFaces);
-                    }
-                    if (typeof data.playerModeEnabled !== 'undefined') {
-                        window.playerModeEnabled = data.playerModeEnabled;
-                        const toggle = document.getElementById('playerModeToggle');
-                        if (toggle) toggle.checked = data.playerModeEnabled;
-                        window.togglePlayerModeSettingQuiet(data.playerModeEnabled);
-                    }
-
-                    if (data.clients) {
-                        let collectedNames = [];
-                        Object.keys(data.clients).forEach(cid => {
-                            if (data.clients[cid] && data.clients[cid].name) {
-                                collectedNames.push(data.clients[cid].name);
-                            }
-                        });
-                        if (collectedNames.length > 0) {
-                            window.playerNames = collectedNames;
-                            const input = document.getElementById('playerNamesInput');
-                            if (input && document.activeElement !== input) {
-                                input.value = window.getLocalPlayerName ? window.getLocalPlayerName() : collectedNames[0];
-                            }
-                        }
-                    }
-
-                    if (typeof data.activePlayerIndex !== 'undefined') {
-                        window.activePlayerIndex = data.activePlayerIndex;
-                    }
-                    if (data.actionHistory) {
-                        window.actionHistory = data.actionHistory;
-                        window.renderHistoryList();
-                    }
-                    window.renderAll();
-                    isRemoteUpdate = false;
-                }
-            }, (error) => {
-                console.warn("Room listener error:", error);
-            });
-        };
-
-        window.leaveRoom = function() {
-            if (unsubscribeRoom) {
-                unsubscribeRoom();
-                unsubscribeRoom = null;
-            }
-            window.currentRoomId = null;
-            const banner = document.getElementById('onlineStatusBanner');
-            if (banner) banner.classList.add('hidden');
-            window.renderAll();
-        };
-
-        window.initFirebaseConnection();
-    </script>
-
     <script>
         let currentLang = 'en';
         let visualMode = 'dots';
@@ -524,20 +318,10 @@
         let activeDieId = null;
 
         let playerModeEnabled = false;
-        let playerNames = ['Player 1'];
+        let playerNames = ['Player 1', 'Player 2'];
         let activePlayerIndex = 0;
-        let currentRoomId = null;
 
         let actionHistory = [];
-
-        function getLocalPlayerName() {
-            const input = document.getElementById('playerNamesInput');
-            if (input && input.value.trim().length > 0) {
-                return input.value.trim();
-            }
-            return playerNames[0] || 'Player';
-        }
-        window.getLocalPlayerName = getLocalPlayerName;
 
         const translations = {
             uk: {
@@ -559,16 +343,9 @@
                 color: "Колір",
                 playerTurnsTitle: "Режим ходів гравців",
                 playerTurnsDesc: "Чергування ходів між гравцями",
-                playersList: "Ваше ім'я в кімнаті",
+                playersList: "Імена гравців (через кому, до 8)",
                 passTurn: "Передати хід",
                 currentTurn: "Хід гравця",
-                onlineTitle: "Мережева кімната",
-                createRoom: "Створити мою кімнату",
-                joinRoom: "Приєднатися до кімнати",
-                or: "або приєднатися за кодом",
-                leaveRoom: "Вийти",
-                roomIdLabel: "Кімната",
-                onlineNav: "Онлайн",
                 historyBtn: "Історія",
                 historyTitle: "Історія дій",
                 clearHistory: "Очистити",
@@ -599,17 +376,10 @@
                 colorTag: "Color Tag",
                 color: "Color",
                 playerTurnsTitle: "Player Turns Mode",
-                playerTurnsDesc: "Track turns across connected players",
-                playersList: "Your Nickname in Room",
+                playerTurnsDesc: "Track turns across multiple players",
+                playersList: "Player Names (comma separated, up to 8)",
                 passTurn: "Pass Turn",
                 currentTurn: "Current Turn",
-                onlineTitle: "Online Multiplayer Room",
-                createRoom: "Create My Room",
-                joinRoom: "Join Room",
-                or: "or join existing code",
-                leaveRoom: "Exit",
-                roomIdLabel: "Room",
-                onlineNav: "Online",
                 historyBtn: "History",
                 historyTitle: "Action History",
                 clearHistory: "Clear",
@@ -617,7 +387,7 @@
                 actRollAll: "Rolled all dice",
                 actRollSelected: "Rolled selected dice",
                 actRollSingle: "Rolled single die",
-                actPassTurn: "Passed turn",
+                actPassedTurn: "Passed turn",
                 actColor: "Updated color tag",
                 actAddDice: "Added die",
                 actRemoveDice: "Removed die"
@@ -671,7 +441,6 @@
             }
 
             renderHistoryList();
-            triggerSync();
         }
 
         function toggleHistoryModal() {
@@ -682,7 +451,6 @@
         function clearHistory() {
             actionHistory = [];
             renderHistoryList();
-            triggerSync();
         }
 
         function renderHistoryList() {
@@ -715,70 +483,6 @@
                 `;
             });
             container.innerHTML = html;
-        }
-
-        function updateOnlineButtonVisibility() {
-            const wrapper = document.getElementById('onlineBtnWrapper');
-            if (!wrapper) return;
-            if (navigator.onLine) {
-                wrapper.classList.remove('hidden');
-            } else {
-                wrapper.classList.add('hidden');
-                if (window.leaveRoom) window.leaveRoom();
-            }
-        }
-
-        window.addEventListener('online', updateOnlineButtonVisibility);
-        window.addEventListener('offline', updateOnlineButtonVisibility);
-
-        function openOnlineModal() {
-            if (!navigator.onLine) return;
-            const modal = document.getElementById('onlineModal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeOnlineModal() {
-            const modal = document.getElementById('onlineModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        async function createRoom() {
-            const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            currentRoomId = randomCode;
-            window.currentRoomId = randomCode;
-            closeOnlineModal();
-
-            const banner = document.getElementById('onlineStatusBanner');
-            const codeDisplay = document.getElementById('currentRoomCodeDisplay');
-            if (banner) banner.classList.remove('hidden');
-            if (codeDisplay) codeDisplay.innerText = randomCode;
-
-            if (window.syncStateToFirebase) await window.syncStateToFirebase();
-            if (window.startListeningRoom) window.startListeningRoom(randomCode);
-        }
-
-        function joinRoom() {
-            const input = document.getElementById('roomCodeInput');
-            if (!input) return;
-            const code = input.value.trim().toUpperCase();
-            if (!code) return;
-
-            currentRoomId = code;
-            window.currentRoomId = code;
-            closeOnlineModal();
-
-            const banner = document.getElementById('onlineStatusBanner');
-            const codeDisplay = document.getElementById('currentRoomCodeDisplay');
-            if (banner) banner.classList.remove('hidden');
-            if (codeDisplay) codeDisplay.innerText = code;
-
-            if (window.startListeningRoom) window.startListeningRoom(code);
-        }
-
-        function triggerSync() {
-            if (currentRoomId && window.syncStateToFirebase) {
-                window.syncStateToFirebase();
-            }
         }
 
         function playRollSound() {
@@ -850,12 +554,6 @@
             safeQuerySetText('[data-i18n-pass-turn]', t.passTurn);
             safeQuerySetText('[data-i18n-current-turn]', t.currentTurn);
             safeQuerySetText('[data-i18n-players-list]', t.playersList);
-            safeQuerySetText('[data-i18n-online-title]', t.onlineTitle);
-            safeQuerySetText('[data-i18n-create-room]', t.createRoom);
-            safeQuerySetText('[data-i18n-join-room]', t.joinRoom);
-            safeQuerySetText('[data-i18n-or]', t.or);
-            safeQuerySetText('[data-i18n-leave-room]', t.leaveRoom);
-            safeQuerySetText('[data-i18n-room-id-label]', t.roomIdLabel);
             safeQuerySetText('[data-i18n-history-btn]', t.historyBtn);
             safeQuerySetText('[data-i18n-history-title]', t.historyTitle);
             safeQuerySetText('[data-i18n-clear-history]', t.clearHistory);
@@ -881,91 +579,56 @@
                 dieFaces = 9;
             }
             applyLanguage();
-            triggerSync();
         }
 
         function togglePlayerModeSetting(enabled) {
             playerModeEnabled = enabled;
-            window.playerModeEnabled = enabled;
             const container = document.getElementById('playerConfigContainer');
             if (container) {
                 if (enabled) {
                     container.classList.remove('hidden');
                     const input = document.getElementById('playerNamesInput');
-                    if (input && !input.value) input.value = playerNames[0] || 'Player';
+                    if (input && !input.value) input.value = playerNames.join(', ');
                 } else {
                     container.classList.add('hidden');
                 }
             }
             renderAll();
-            triggerSync();
-        }
-
-        function togglePlayerModeSettingQuiet(enabled) {
-            playerModeEnabled = enabled;
-            window.playerModeEnabled = enabled;
-            const container = document.getElementById('playerConfigContainer');
-            if (container) {
-                if (enabled) {
-                    container.classList.remove('hidden');
-                } else {
-                    container.classList.add('hidden');
-                }
-            }
         }
 
         function onPlayerNamesCommaChange(value) {
-            const trimmed = value.trim();
-            if (trimmed.length > 0) {
-                if (playerNames.length === 0) {
-                    playerNames = [trimmed];
-                } else {
-                    playerNames[0] = trimmed;
-                }
+            const parts = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (parts.length > 0) {
+                playerNames = parts.slice(0, 8);
+            } else {
+                playerNames = ['Player 1'];
             }
-            window.playerNames = playerNames;
+            if (activePlayerIndex >= playerNames.length) {
+                activePlayerIndex = 0;
+            }
             updatePlayerBanner();
-            triggerSync();
-        }
-
-        function isMyTurn() {
-            if (!playerModeEnabled) return true;
-            if (playerNames.length === 0) return true;
-            const activeName = playerNames[activePlayerIndex];
-            const myName = getLocalPlayerName();
-            if (currentRoomId) {
-                return activeName === myName;
-            }
-            return true;
         }
 
         function passTurn() {
             if (!playerModeEnabled || playerNames.length === 0) return;
             const prevPlayer = playerNames[activePlayerIndex];
             activePlayerIndex = (activePlayerIndex + 1) % playerNames.length;
-            window.activePlayerIndex = activePlayerIndex;
             const nextPlayer = playerNames[activePlayerIndex];
 
             const t = translations[currentLang];
             addActionLog(t.actPassTurn || 'Passed turn', `${prevPlayer} ➡️ ${nextPlayer}`);
 
             updatePlayerBanner();
-            triggerSync();
         }
 
         function updatePlayerBanner() {
             const banner = document.getElementById('playerTurnBanner');
             const passBtn = document.getElementById('passTurnBtn');
             const nameDisplay = document.getElementById('activePlayerNameDisplay');
-            const warningDisplay = document.getElementById('myTurnWarning');
-            const rollBtn = document.getElementById('rollBtn');
-            const rollSelectedBtn = document.getElementById('rollSelectedBtn');
 
             if (!playerModeEnabled) {
                 if (banner) banner.classList.add('hidden');
                 if (passBtn) passBtn.classList.add('hidden');
-                if (rollBtn) rollBtn.disabled = false;
-                if (rollSelectedBtn) rollSelectedBtn.disabled = false;
                 return;
             }
 
@@ -974,25 +637,6 @@
             
             if (nameDisplay && playerNames[activePlayerIndex]) {
                 nameDisplay.innerText = playerNames[activePlayerIndex];
-            }
-
-            const myTurn = isMyTurn();
-            if (warningDisplay) {
-                if (!myTurn && currentRoomId) {
-                    warningDisplay.classList.remove('hidden');
-                } else {
-                    warningDisplay.classList.add('hidden');
-                }
-            }
-
-            const blocked = currentRoomId && !myTurn;
-            if (rollBtn) rollBtn.disabled = blocked;
-            if (rollSelectedBtn) rollSelectedBtn.disabled = blocked;
-            if (passBtn) passBtn.disabled = blocked && currentRoomId;
-
-            const badge = document.getElementById('roomPlayerBadge');
-            if (badge) {
-                badge.innerText = `Me: ${getLocalPlayerName()}`;
             }
         }
 
@@ -1027,10 +671,8 @@
                     }
                 }
             }
-            window.diceList = diceList;
             updateSelectedUI();
             renderAll();
-            triggerSync();
         }
 
         function toggleSelectAll() {
@@ -1095,12 +737,10 @@
 
             hideGroupColorPicker();
             renderAll();
-            triggerSync();
         }
 
         function rollAllDice() {
             if (isRolling) return;
-            if (currentRoomId && !isMyTurn()) return;
 
             isRolling = true;
             selectedDiceIds.clear();
@@ -1125,20 +765,21 @@
                     sum += d.value;
                 });
 
-                window.diceList = diceList;
                 const t = translations[currentLang];
                 addActionLog(t.actRollAll, `Sum: ${sum} (${diceList.map(d=>d.value).join(', ')})`);
 
+                if (playerModeEnabled && playerNames.length > 0) {
+                    activePlayerIndex = (activePlayerIndex + 1) % playerNames.length;
+                }
+
                 renderAll();
                 isRolling = false;
-                if (rollBtn && (!currentRoomId || isMyTurn())) rollBtn.disabled = false;
-                triggerSync();
+                if (rollBtn) rollBtn.disabled = false;
             }, 350);
         }
 
         function rollSelectedDice() {
             if (isRolling || selectedDiceIds.size === 0) return;
-            if (currentRoomId && !isMyTurn()) return;
 
             isRolling = true;
             hideGroupColorPicker();
@@ -1164,7 +805,6 @@
                     }
                 });
 
-                window.diceList = diceList;
                 const t = translations[currentLang];
                 addActionLog(t.actRollSelected, rolledVals.join(', '));
 
@@ -1172,7 +812,6 @@
                 updateSelectedUI();
                 renderAll();
                 isRolling = false;
-                triggerSync();
             }, 350);
         }
 
@@ -1196,10 +835,8 @@
                 const t = translations[currentLang];
                 addActionLog(t.actColor, `#${d.id} ➡️ ${color || 'none'}`);
             }
-            window.diceList = diceList;
             closeDieControlModal();
             renderAll();
-            triggerSync();
         }
 
         function rerollActiveDieModal() {
@@ -1217,10 +854,8 @@
                 addActionLog(t.actRollSingle, `#${d.id} = ${d.value}`);
             }
 
-            window.diceList = diceList;
             closeDieControlModal();
             renderAll();
-            triggerSync();
         }
 
         function removeActiveDie() {
@@ -1230,11 +865,9 @@
             const t = translations[currentLang];
             addActionLog(t.actRemoveDice, `#${activeDieId}`);
 
-            window.diceList = diceList;
             closeDieControlModal();
             updateSelectedUI();
             renderAll();
-            triggerSync();
         }
 
         function updateSelectedUI() {
@@ -1333,10 +966,11 @@
                     card.appendChild(numContainer);
                 }
 
-                const valLabel = document.createElement('div');
-                valLabel.className = "text-[11px] font-extrabold text-slate-700 dark:text-slate-300 h-3 flex items-center justify-center pb-0.5";
-                valLabel.innerText = die.value === 0 ? "—" : `${die.value}`;
-                card.appendChild(valLabel);
+                const valLabel = document.getElementById('valLabel');
+                const newLabel = document.createElement('div');
+                newLabel.className = "text-[11px] font-extrabold text-slate-700 dark:text-slate-300 h-3 flex items-center justify-center pb-0.5";
+                newLabel.innerText = die.value === 0 ? "—" : `${die.value}`;
+                card.appendChild(newLabel);
 
                 grid.appendChild(card);
             });
@@ -1350,23 +984,6 @@
         function setDieType(faces) {
             if (visualMode === 'dots' && faces > 9) faces = 9;
             dieFaces = faces;
-            window.dieFaces = faces;
-            const cf = document.getElementById('customFaces');
-            if (cf) cf.value = faces;
-
-            ['d4', 'd6', 'd9', 'd20'].forEach(id => {
-                const btn = document.getElementById(`btn-${id}`);
-                if (btn) btn.className = "py-2 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-700 dark:text-slate-300";
-            });
-            const activeBtn = document.getElementById(`btn-d${faces}`);
-            if (activeBtn) activeBtn.className = "py-2 rounded-xl border border-purple-500 bg-purple-600/20 text-purple-700 dark:text-purple-300 text-xs font-semibold shadow-sm shadow-purple-500/20 transition-all";
-            triggerSync();
-        }
-
-        function setDieTypeQuiet(faces) {
-            if (visualMode === 'dots' && faces > 9) faces = 9;
-            dieFaces = faces;
-            window.dieFaces = faces;
             const cf = document.getElementById('customFaces');
             if (cf) cf.value = faces;
 
@@ -1385,43 +1002,14 @@
             if (num > 64) num = 64;
             if (visualMode === 'dots' && num > 9) num = 9;
             dieFaces = num;
-            window.dieFaces = num;
             const cf = document.getElementById('customFaces');
             if (cf) cf.value = num;
-            triggerSync();
         }
 
         function toggleSettingsModal() {
             const modal = document.getElementById('settingsModal');
             if (modal) modal.classList.toggle('hidden');
         }
-
-        window.toggleLanguage = toggleLanguage;
-        window.toggleVisualMode = toggleVisualMode;
-        window.setDieType = setDieType;
-        window.setDieTypeQuiet = setDieTypeQuiet;
-        window.onCustomFacesChange = onCustomFacesChange;
-        window.adjustDiceCount = adjustDiceCount;
-        window.toggleSelectAll = toggleSelectAll;
-        window.toggleGroupColorPicker = toggleGroupColorPicker;
-        window.setGroupColor = setGroupColor;
-        window.rollAllDice = rollAllDice;
-        window.rollSelectedDice = rollSelectedDice;
-        window.toggleSettingsModal = toggleSettingsModal;
-        window.openDieControlModal = openDieControlModal;
-        window.closeDieControlModal = closeDieControlModal;
-        window.setDieColor = setDieColor;
-        window.rerollActiveDieModal = rerollActiveDieModal;
-        window.removeActiveDie = removeActiveDie;
-        window.togglePlayerModeSetting = togglePlayerModeSetting;
-        window.togglePlayerModeSettingQuiet = togglePlayerModeSettingQuiet;
-        window.passTurn = passTurn;
-        window.openOnlineModal = openOnlineModal;
-        window.closeOnlineModal = closeOnlineModal;
-        window.createRoom = createRoom;
-        window.joinRoom = joinRoom;
-        window.toggleHistoryModal = toggleHistoryModal;
-        window.clearHistory = clearHistory;
 
         document.addEventListener('click', function(e) {
             const groupColorPopover = document.getElementById('groupColorPopover');
@@ -1436,7 +1024,6 @@
             currentLang = 'en';
             visualMode = 'dots';
             diceList.forEach(d => d.recentlyRolled = false);
-            updateOnlineButtonVisibility();
             applyLanguage();
         };
     </script>
