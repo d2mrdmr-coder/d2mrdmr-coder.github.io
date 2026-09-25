@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Links</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-between selection:bg-purple-500 selection:text-white">
+
+    <header class="w-full py-4 px-6 border-b border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-slate-700 dark:text-slate-300">
+                    🌐 <span id="langLabel">EN</span>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <input type="text" id="searchInput" oninput="filterLinks(this.value)" placeholder="Search..." class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-purple-500 w-44 sm:w-64">
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col gap-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="linksGrid">
+            <!-- Dynamically populated buttons -->
+        </div>
+    </main>
+
+    <footer class="w-full py-4 px-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+        <!-- Add Link button completely removed as requested -->
+    </footer>
+
+    <script>
+        let currentLang = 'en';
+        let searchQuery = '';
+        
+        // List of requested square tools/services located in the root project folder
+        let links = [
+            { id: 1, name: { en: "Dice Roller", uk: "Крутити кубики" }, url: "dice-roller.html", iconPath: "dice-roller.ico" },
+            { id: 2, name: { en: "Scorebook", uk: "Записник балів" }, url: "scorebook.html", iconPath: "scorebook.ico" }
+        ];
+
+        const translations = {
+            en: { empty: "No links" },
+            uk: { empty: "Немає посилань" }
+        };
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'uk' : 'en';
+            document.getElementById('langLabel').innerText = currentLang.toUpperCase();
+            renderLinks();
+        }
+
+        function filterLinks(query) {
+            searchQuery = query.toLowerCase();
+            renderLinks();
+        }
+
+        function renderLinks() {
+            const grid = document.getElementById('linksGrid');
+            const filtered = links.filter(l => {
+                const name = l.name[currentLang].toLowerCase();
+                const url = l.url.toLowerCase();
+                return name.includes(searchQuery) || url.includes(searchQuery);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-xs text-slate-400">${translations[currentLang].empty}</div>`;
+                return;
+            }
+
+            let html = '';
+            filtered.forEach(l => {
+                const displayName = l.name[currentLang];
+                html += `
+                    <div onclick="window.open('${l.url}', '_blank')" class="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 dark:hover:border-purple-500 rounded-2xl p-5 flex flex-col items-center justify-center gap-3 aspect-square shadow-sm hover:shadow-md transition-all cursor-pointer">
+                        <img src="${l.iconPath}" alt="icon" class="w-10 h-10 shrink-0 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/40x40/a855f7/ffffff?text=🎲';">
+                        <span class="text-xs font-bold text-center truncate w-full">${displayName}</span>
+                    </div>
+                `;
+            });
+            grid.innerHTML = html;
+        }
+
+        window.onload = renderLinks;
+    </script>
+</body>
+</html>
