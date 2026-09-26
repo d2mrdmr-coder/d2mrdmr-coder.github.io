@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кидання кубиків, кольори та формула</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @keyframes rollShake {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            20% { transform: translate(-4px, 4px) rotate(-8deg) scale(0.95); }
+            40% { transform: translate(4px, -4px) rotate(8deg) scale(1.05); }
+            60% { transform: translate(-3px, 3px) rotate(-4deg) scale(0.98); }
+            80% { transform: translate(3px, -3px) rotate(4deg) scale(1.02); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+        .rolling {
+            animation: rollShake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+        }
+        .glow-dot {
+            box-shadow: 0 0 10px rgba(168, 85, 247, 0.9), inset 0 0 3px rgba(255, 255, 255, 0.9);
+        }
+        .inactive-dot {
+            background-color: rgba(148, 163, 184, 0.15);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .recently-rolled {
+            box-shadow: 0 0 18px 3px rgba(168, 85, 247, 0.65);
+            border-color: #a855f7 !important;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col landscape:flex-row justify-between selection:bg-purple-500 selection:text-white overflow-x-hidden transition-colors duration-300">
+
+    <header class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-b landscape:border-b-0 landscape:border-r border-slate-200/80 dark:border-slate-800/60 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md sticky top-0 landscape:fixed landscape:left-0 z-50">
+        <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-start gap-3">
+            
+            <div class="flex landscape:flex-col items-center gap-1.5 p-1 bg-transparent border border-slate-300/40 dark:border-slate-800/50 rounded-2xl backdrop-blur-sm">
+                <!-- Language Toggle Button -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Змінити мову">
+                    🌐 <span id="langLabel">UK</span>
+                </button>
+
+                <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
+
+                <!-- Visual Mode Toggle Button (Icon + Text in landscape, Icon only in portrait) -->
+                <button id="modeToggleBtn" onclick="toggleVisualMode()" class="px-3 py-1.5 landscape:px-2.5 text-xs font-bold rounded-xl transition-all bg-purple-600 hover:bg-purple-500 text-white shadow flex items-center gap-1.5 active:scale-95" title="Змінити режим відображення">
+                    <span id="modeIcon" class="text-sm">🎲</span>
+                    <span id="modeTextLabel" class="hidden landscape:inline" data-i18n-dots>Крапки</span>
+                </button>
+
+                <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
+
+                <!-- Formula Panel Toggle Button with Result right next to icon -->
+                <button onclick="toggleFormulaModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-purple-600/15 dark:bg-purple-950/40 border border-purple-500/30 hover:bg-purple-600/25 text-purple-700 dark:text-purple-300 shadow-sm text-center flex items-center gap-1.5" title="Математична формула">
+                    <span>📐</span>
+                    <span id="formulaResultValue" class="font-mono font-black text-sm">0</span>
+                </button>
+
+                <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
+
+                <!-- History Button -->
+                <button onclick="toggleHistoryModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Історія дій">
+                    📜 <span class="hidden sm:inline" data-i18n-history-btn>Історія</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-4 landscape:pl-24 landscape:pr-4 flex flex-col gap-4 mb-28 landscape:mb-0 relative z-10">
+        
+        <!-- Top Control Bar (Select All) -->
+        <div id="scoreBarCard" class="flex items-center justify-between gap-2 bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl backdrop-blur-md transition-all duration-300 shadow-sm min-h-[52px] relative z-20">
+            
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSelectAll()" id="selectAllBtn" class="w-9 h-9 bg-slate-200/80 dark:bg-slate-800/80 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl flex items-center justify-center transition-all shadow-sm active:scale-95" title="Виділити все">
+                    <svg id="selectAllIcon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="selectedActionContainer" class="hidden flex items-center gap-2 relative z-30">
+                <div class="relative">
+                    <button onclick="toggleGroupColorPicker()" id="groupColorBtn" class="px-2.5 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-gradient-to-tr from-rose-500 via-emerald-500 to-sky-500 border border-white/40"></span>
+                        <span data-i18n-color>Колір</span>
+                    </button>
+
+                    <div id="groupColorPopover" class="hidden absolute right-0 mt-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-[99999] flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                        <button onclick="setGroupColor(null)" class="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] hover:scale-110 transition-transform" title="Очистити колір">✕</button>
+                        <button onclick="setGroupColor('red')" class="w-7 h-7 rounded-lg bg-rose-500 hover:scale-110 transition-transform shadow-sm" title="Червоний"></button>
+                        <button onclick="setGroupColor('orange')" class="w-7 h-7 rounded-lg bg-amber-500 hover:scale-110 transition-transform shadow-sm" title="Помаранчевий"></button>
+                        <button onclick="setGroupColor('green')" class="w-7 h-7 rounded-lg bg-emerald-500 hover:scale-110 transition-transform shadow-sm" title="Зелений"></button>
+                        <button onclick="setGroupColor('blue')" class="w-7 h-7 rounded-lg bg-sky-500 hover:scale-110 transition-transform shadow-sm" title="Синій"></button>
+                        <button onclick="setGroupColor('purple')" class="w-7 h-7 rounded-lg bg-purple-500 hover:scale-110 transition-transform shadow-sm" title="Фіолетовий"></button>
+                    </div>
+                </div>
+
+                <button onclick="rollSelectedDice()" id="rollSelectedBtn" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 whitespace-nowrap active:scale-95">
+                    <span id="selectedCountBadge" class="bg-white/25 px-1.5 py-0.5 rounded-md text-[10px]">0</span>
+                    <span data-i18n-reroll-selected>Перекинути</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Player Concise Indicator -->
+        <div id="playerTurnBanner" class="hidden items-center justify-center gap-1.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-400 relative z-20 transition-all">
+            <span data-i18n-current-turn>Хід гравця</span>: <span id="activePlayerNameDisplay" class="font-extrabold text-purple-600 dark:text-purple-400">Гравець 1</span>
+        </div>
+
+        <!-- Dice Grid Display Container -->
+        <div class="flex-1 w-full flex flex-col gap-3 relative z-10">
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 landscape:grid-cols-6 gap-3.5 items-center justify-center w-full py-2" id="diceGrid">
+                <!-- Dynamically populated dice cards -->
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-t landscape:border-t-0 landscape:border-l border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md fixed landscape:right-0 bottom-0 z-50 shadow-2xl landscape:shadow-none">
+        <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-center gap-2 sm:gap-3 h-full">
+            
+            <div class="flex landscape:flex-col items-center bg-slate-200/70 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-2xl p-0.5 shadow-inner shrink-0">
+                <button onclick="adjustDiceCount(-1)" class="w-9 h-9 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800/60 rounded-xl font-bold text-base transition-all active:scale-95" title="Зменшити">-</button>
+                <div class="px-2 landscape:px-0 landscape:py-1 text-center min-w-[28px]">
+                    <span id="bottomDiceCount" class="text-xs font-extrabold text-slate-800 dark:text-white">1</span>
+                </div>
+                <button onclick="adjustDiceCount(1)" class="w-9 h-9 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-300/60 dark:hover:bg-slate-800/60 rounded-xl font-bold text-base transition-all active:scale-95" title="Збільшити">+</button>
+            </div>
+
+            <button onclick="rollAllDice()" id="rollBtn" class="flex-1 min-w-0 landscape:flex-none py-3 px-3 sm:px-5 landscape:py-3 landscape:px-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] hover:bg-[position:right_center] text-white text-xs sm:text-base landscape:text-xs font-bold rounded-2xl shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 flex items-center justify-center gap-1 sm:gap-2 landscape:flex-col landscape:gap-0 landscape:leading-tight truncate disabled:opacity-50 disabled:cursor-not-allowed">
+                <span data-i18n-roll-1>Кинути</span>
+                <span data-i18n-roll-2>Всі</span>
+            </button>
+
+            <button onclick="passTurn()" id="passTurnBtn" class="hidden w-11 h-11 landscape:w-auto landscape:h-auto landscape:py-3 landscape:px-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-base font-bold rounded-2xl transition-all shadow-md flex items-center justify-center shrink-0 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed" title="Передати хід">
+                🔄
+            </button>
+
+            <button onclick="toggleSettingsModal()" class="w-11 h-11 bg-slate-200/70 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center transition-all shadow-md shrink-0" title="Налаштування">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Formula Modal -->
+    <div id="formulaModal" class="fixed inset-0 pointer-events-none z-[80] flex items-center justify-center hidden bg-black/50 backdrop-blur-xs p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📐</span>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-formula-title>Калькулятор математичної формули</h3>
+                </div>
+                <button onclick="toggleFormulaModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-enter-formula>Введіть вираз (напр., sum() + A - M або A + B * 2)</label>
+                    <button onclick="clearFormula()" class="text-[11px] font-semibold text-rose-500 hover:underline" data-i18n-clear>Очистити</button>
+                </div>
+                <input type="text" id="formulaInput" oninput="onFormulaInputChange(this.value)" placeholder="sum() + A - M" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 shadow-inner">
+            </div>
+
+            <div class="flex items-center justify-between bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50 p-3 rounded-2xl">
+                <span class="text-xs font-semibold text-purple-700 dark:text-purple-300" data-i18n-calc-result>Результат обчислення:</span>
+                <span id="formulaModalResultValue" class="text-lg font-extrabold text-purple-700 dark:text-purple-300 font-mono">0</span>
+            </div>
+
+            <div class="flex flex-col gap-2 bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl text-xs">
+                <span class="font-bold text-slate-700 dark:text-slate-300 uppercase text-[10px] tracking-wider" data-i18n-funcs-ref>Вбудовані функції та змінні:</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-slate-600 dark:text-slate-400 text-[11px]">
+                    <div><strong class="text-purple-600 dark:text-purple-400">sum()</strong>: Сума всіх активних кубиків</div>
+                    <div><strong class="text-purple-600 dark:text-purple-400">avg()</strong>: Середнє значення</div>
+                    <div><strong class="text-purple-600 dark:text-purple-400">min() / max()</strong>: Мін. або макс. кубик</div>
+                    <div><strong class="text-purple-600 dark:text-purple-400">count()</strong>: Кількість кубиків</div>
+                    <div><strong class="text-purple-600 dark:text-purple-400">A — L</strong>: Значення кубиків 1-12</div>
+                    <div><strong class="text-purple-600 dark:text-purple-400">M / N</strong>: Всього кубиків / Гравців</div>
+                </div>
+                <span class="text-[10px] text-slate-400 dark:text-slate-500 mt-1" data-i18n-vars-desc>Формули обчислюються миттєво «на льоту» під час введення!</span>
+            </div>
+
+            <button onclick="toggleFormulaModal()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-lg shadow-purple-600/30" data-i18n-close-done>
+                Готово
+            </button>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="fixed inset-0 pointer-events-none z-[75] flex items-center justify-center hidden bg-black/50 backdrop-blur-xs p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[80vh]">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <h3 id="historyModalTitle" class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-history-title>Історія дій</h3>
+                    <span id="historyCountBadge" class="bg-purple-600/20 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearHistory()" class="text-[11px] font-semibold text-rose-500 hover:underline px-2 py-1" data-i18n-clear-history>Очистити</button>
+                    <button onclick="toggleHistoryModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="historyListContainer" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 min-h-[220px] max-h-[50vh]">
+                <div class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 font-medium" data-i18n-no-history>
+                    Історія дій порожня.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 pointer-events-none z-[60] flex items-end landscape:items-center landscape:justify-end justify-center hidden">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border-t landscape:border-t-0 landscape:border-l border-x border-slate-300 dark:border-slate-800 rounded-t-3xl landscape:rounded-t-none landscape:rounded-l-3xl max-w-5xl landscape:max-w-md w-full landscape:h-full p-6 shadow-2xl flex flex-col gap-5 max-h-[85vh] landscape:max-h-none overflow-y-auto transform transition-transform duration-300">
+            <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-1 landscape:hidden"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 id="modalTitle" class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-settings-title>Розширені налаштування</h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label id="facesLabel" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-faces-label>Тип кубика (Грані)</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="setDieType(4)" id="btn-d4" class="py-2 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-700 dark:text-slate-300">D4</button>
+                    <button onclick="setDieType(6)" id="btn-d6" class="py-2 rounded-xl border border-purple-500 bg-purple-600/20 text-purple-700 dark:text-purple-300 text-xs font-semibold shadow-sm shadow-purple-500/20 transition-all">D6</button>
+                    <button onclick="setDieType(9)" id="btn-d9" class="py-2 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-700 dark:text-slate-300">D9</button>
+                    <button onclick="setDieType(20)" id="btn-d20" class="py-2 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-700 dark:text-slate-300">D20</button>
+                </div>
+                <div class="flex items-center justify-between mt-1">
+                    <span id="customFacesLabel" class="text-xs text-slate-600 dark:text-slate-400" data-i18n-custom-faces>Власні грані (до 64):</span>
+                    <input type="number" id="customFaces" min="2" max="64" value="6" onchange="onCustomFacesChange(this.value)" class="w-20 bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 text-center font-bold">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/60 px-3 py-2.5 rounded-xl">
+                <div class="flex flex-col">
+                    <span id="allowZeroTitle" class="text-xs font-medium text-slate-700 dark:text-slate-300" data-i18n-allow-zero-title>Допустимий нуль (0)</span>
+                    <span id="allowZeroDesc" class="text-[10px] text-slate-500 dark:text-slate-500" data-i18n-allow-zero-desc>Якщо випадає нуль — буде порожній фон</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="allowZeroToggle" onchange="renderAll()" class="sr-only peer">
+                    <div class="w-9 h-5 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+            </div>
+
+            <div class="flex flex-col gap-3 bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/60 p-3 rounded-2xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col">
+                        <span id="playerTurnsTitle" class="text-xs font-semibold text-slate-800 dark:text-slate-200" data-i18n-player-turns-title>Режим ходів гравців</span>
+                        <span id="playerTurnsDesc" class="text-[10px] text-slate-500 dark:text-slate-400" data-i18n-player-turns-desc>Чергування ходів між гравцями</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="playerModeToggle" onchange="togglePlayerModeSetting(this.checked)" class="sr-only peer">
+                        <div class="w-9 h-5 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                </div>
+
+                <div id="playerConfigContainer" class="hidden flex flex-col gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-players-list>Імена гравців (через кому, до 8)</span>
+                    <input type="text" id="playerNamesInput" oninput="onPlayerNamesCommaChange(this.value)" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 font-medium" placeholder="Гравець 1, Гравець 2, Гравець 3">
+                </div>
+            </div>
+
+            <button onclick="toggleSettingsModal()" id="closeModalBtn" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-lg shadow-purple-600/30" data-i18n-save-close>
+                Зберегти та закрити
+            </button>
+        </div>
+    </div>
+
+    <!-- Die Control Modal -->
+    <div id="dieControlModal" class="fixed inset-0 pointer-events-none z-[60] flex items-center justify-center hidden bg-black/40 backdrop-blur-xs">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-xs w-full p-5 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 id="dieControlTitle" class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-die-settings>Налаштування кубика</h3>
+                <button onclick="closeDieControlModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-color-tag>Мітка кольором</label>
+                <div class="grid grid-cols-6 gap-2" id="colorPalette">
+                    <button onclick="setDieColor(null)" class="w-8 h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px]" title="Жодного">✕</button>
+                    <button onclick="setDieColor('red')" class="w-8 h-8 rounded-xl bg-rose-500 hover:ring-2 ring-rose-300 transition-all shadow-sm" title="Червоний"></button>
+                    <button onclick="setDieColor('orange')" class="w-8 h-8 rounded-xl bg-amber-500 hover:ring-2 ring-amber-300 transition-all shadow-sm" title="Помаранчевий"></button>
+                    <button onclick="setDieColor('green')" class="w-8 h-8 rounded-xl bg-emerald-500 hover:ring-2 ring-emerald-300 transition-all shadow-sm" title="Зелений"></button>
+                    <button onclick="setDieColor('blue')" class="w-8 h-8 rounded-xl bg-sky-500 hover:ring-2 ring-sky-300 transition-all shadow-sm" title="Синій"></button>
+                    <button onclick="setDieColor('purple')" class="w-8 h-8 rounded-xl bg-purple-500 hover:ring-2 ring-purple-300 transition-all shadow-sm" title="Фіолетовий"></button>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button onclick="rerollActiveDieModal()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md" data-i18n-reroll-single>
+                    Перекинути
+                </button>
+                <button onclick="removeActiveDie()" class="px-3 py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-700 dark:text-rose-300 font-semibold rounded-xl text-xs transition-all border border-rose-500/30" title="Видалити кубик">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'uk';
+        let visualMode = 'dots';
+        let dieFaces = 6;
+        let isRolling = false;
+        let audioCtx = null;
+        
+        let diceList = [
+            { id: 1, value: 6, color: null, recentlyRolled: false }
+        ];
+        let nextDieId = 2;
+
+        let selectedDiceIds = new Set();
+        let activeDieId = null;
+
+        let playerModeEnabled = false;
+        let playerNames = ['Гравець 1', 'Гравець 2'];
+        let activePlayerIndex = 0;
+
+        let actionHistory = [];
+        let currentFormula = '';
+
+        const alphabetLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+
+        const translations = {
+            uk: {
+                dots: "Крапки",
+                nums: "Цифри",
+                roll1: "Кинути",
+                roll2: "Всі",
+                selectAll: "Виділити все",
+                deselectAll: "Зняти виділення",
+                settingsTitle: "Розширені налаштування",
+                facesLabel: "Тип кубика (Грані)",
+                customFaces: "Власні грані (до 64):",
+                allowZeroTitle: "Допустимий нуль (0)",
+                allowZeroDesc: "Якщо випадає нуль — буде порожній фон",
+                saveClose: "Зберегти та закрити",
+                rerollSelected: "Перекинути",
+                rerollSingle: "Перекинути",
+                colorTag: "Мітка кольором",
+                color: "Колір",
+                playerTurnsTitle: "Режим ходів гравців",
+                playerTurnsDesc: "Чергування ходів між гравцями",
+                playersList: "Імена гравців (через кому, до 8)",
+                passTurn: "Передати хід",
+                currentTurn: "Хід гравця",
+                historyBtn: "Історія",
+                historyTitle: "Історія дій",
+                clearHistory: "Очистити",
+                noHistory: "Історія дій порожня.",
+                formulaTitle: "Калькулятор математичної формули",
+                enterFormula: "Введіть вираз (напр., sum() + A - M або A + B * 2)",
+                clear: "Очистити",
+                calcResult: "Результат обчислення:",
+                funcsRef: "Вбудовані функції та змінні:",
+                varsDesc: "sum(), avg(), min(), max(), count() | A–L: кубики 1-12 | M: к-ть кубиків",
+                dieSettings: "Налаштування кубика",
+                actRollAll: "Кидок усіх кубиків",
+                actRollSelected: "Кидок вибраних кубиків",
+                actRollSingle: "Кидок кубика",
+                actPassTurn: "Передача ходу",
+                actColor: "Зміна кольору",
+                actAddDice: "Додано кубик",
+                actRemoveDice: "Видалено кубик"
+            },
+            en: {
+                dots: "Dots",
+                nums: "Numbers",
+                roll1: "Roll",
+                roll2: "All",
+                selectAll: "Select All",
+                deselectAll: "Deselect All",
+                settingsTitle: "Advanced Settings",
+                facesLabel: "Die Type (Faces)",
+                customFaces: "Custom faces (up to 64):",
+                allowZeroTitle: "Allow Zero (0)",
+                allowZeroDesc: "If zero rolls — empty background",
+                saveClose: "Save & Close",
+                rerollSelected: "Re-roll",
+                rerollSingle: "Re-roll",
+                colorTag: "Color Tag",
+                color: "Color",
+                playerTurnsTitle: "Player Turns Mode",
+                playerTurnsDesc: "Track turns across multiple players",
+                playersList: "Player Names (comma separated, up to 8)",
+                passTurn: "Pass Turn",
+                currentTurn: "Current Turn",
+                historyBtn: "History",
+                historyTitle: "Action History",
+                clearHistory: "Clear",
+                noHistory: "No actions recorded yet.",
+                formulaTitle: "Math Formula Calculator",
+                enterFormula: "Enter expression (e.g., sum() + A - M or A + B * 2)",
+                clear: "Clear",
+                calcResult: "Calculation Result:",
+                funcsRef: "Built-in Functions & Variables:",
+                varsDesc: "sum(), avg(), min(), max(), count() | A–L: dice 1-12 | M: total dice",
+                dieSettings: "Die Settings",
+                actRollAll: "Rolled all dice",
+                actRollSelected: "Rolled selected dice",
+                actRollSingle: "Rolled single die",
+                actPassedTurn: "Passed turn",
+                actColor: "Updated color tag",
+                actAddDice: "Added die",
+                actRemoveDice: "Removed die"
+            }
+        };
+
+        const dotPatterns = {
+            1: [4],
+            2: [2, 6],
+            3: [2, 4, 6],
+            4: [0, 2, 6, 8],
+            5: [0, 2, 4, 6, 8],
+            6: [0, 2, 3, 5, 6, 8],
+            7: [0, 1, 2, 4, 6, 7, 8],
+            8: [0, 1, 2, 3, 5, 6, 7, 8],
+            9: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+        };
+
+        const colorMap = {
+            red: 'border-rose-500 bg-rose-50/40 dark:bg-rose-950/20',
+            orange: 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/20',
+            green: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20',
+            blue: 'border-sky-500 bg-sky-50/40 dark:bg-sky-950/20',
+            purple: 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/20'
+        };
+
+        const dotColorMap = {
+            red: 'bg-rose-500 dark:bg-rose-400',
+            orange: 'bg-amber-500 dark:bg-amber-400',
+            green: 'bg-emerald-500 dark:bg-emerald-400',
+            blue: 'bg-sky-500 dark:bg-sky-400',
+            purple: 'bg-purple-600 dark:bg-indigo-200'
+        };
+
+        function addActionLog(actionType, details) {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let playerName = null;
+            if (playerModeEnabled && playerNames.length > 0) {
+                playerName = playerNames[activePlayerIndex];
+            }
+
+            actionHistory.unshift({
+                time: timeStr,
+                type: actionType,
+                details: details,
+                player: playerName
+            });
+
+            if (actionHistory.length > 50) {
+                actionHistory.pop();
+            }
+
+            renderHistoryList();
+        }
+
+        function toggleHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function toggleFormulaModal() {
+            const modal = document.getElementById('formulaModal');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function clearFormula() {
+            currentFormula = '';
+            const input = document.getElementById('formulaInput');
+            if (input) input.value = '';
+            evaluateFormula();
+        }
+
+        function onFormulaInputChange(val) {
+            currentFormula = val;
+            evaluateFormula();
+        }
+
+        function evaluateFormula() {
+            const resultValSpan = document.getElementById('formulaResultValue');
+            const modalResultValSpan = document.getElementById('formulaModalResultValue');
+
+            if (!currentFormula || currentFormula.trim() === '') {
+                const defaultSum = diceList.reduce((acc, d) => acc + d.value, 0);
+                if (resultValSpan) resultValSpan.innerText = defaultSum;
+                if (modalResultValSpan) modalResultValSpan.innerText = defaultSum;
+                return;
+            }
+
+            try {
+                let evalString = currentFormula;
+
+                const diceValues = diceList.map(d => d.value);
+                const totalSum = diceValues.reduce((a, b) => a + b, 0);
+                const avgVal = diceValues.length > 0 ? totalSum / diceValues.length : 0;
+                const minVal = diceValues.length > 0 ? Math.min(...diceValues) : 0;
+                const maxVal = diceValues.length > 0 ? Math.max(...diceValues) : 0;
+                const countVal = diceValues.length;
+
+                evalString = evalString.replace(/\bsum\s*\(\s*\)/gi, totalSum);
+                evalString = evalString.replace(/\bavg\s*\(\s*\)/gi, avgVal);
+                evalString = evalString.replace(/\bmin\s*\(\s*\)/gi, minVal);
+                evalString = evalString.replace(/\bmax\s*\(\s*\)/gi, maxVal);
+                evalString = evalString.replace(/\bcount\s*\(\s*\)/gi, countVal);
+
+                for (let i = 0; i < alphabetLetters.length; i++) {
+                    const letter = alphabetLetters[i];
+                    const dieVal = diceList[i] !== undefined ? diceList[i].value : 0;
+                    const regex = new RegExp(`\\b${letter}\\b`, 'g');
+                    evalString = evalString.replace(regex, dieVal);
+                }
+
+                evalString = evalString.replace(/\bM\b/g, diceList.length);
+                evalString = evalString.replace(/\bN\b/g, playerModeEnabled ? playerNames.length : 0);
+
+                if (!/^[0-9+\-*/().\s]+$/.test(evalString)) {
+                    throw new Error("Invalid characters");
+                }
+
+                const calculated = Function(`return (${evalString});`)();
+                const formattedResult = Number.isFinite(calculated) ? (Number.isInteger(calculated) ? calculated : calculated.toFixed(2)) : 'Помилка';
+
+                if (resultValSpan) resultValSpan.innerText = formattedResult;
+                if (modalResultValSpan) modalResultValSpan.innerText = formattedResult;
+
+            } catch (err) {
+                if (resultValSpan) resultValSpan.innerText = '0';
+                if (modalResultValSpan) modalResultValSpan.innerText = 'Помилка';
+            }
+        }
+
+        function clearHistory() {
+            actionHistory = [];
+            renderHistoryList();
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyListContainer');
+            const badge = document.getElementById('historyCountBadge');
+            const t = translations[currentLang];
+
+            if (badge) badge.innerText = actionHistory.length;
+            if (!container) return;
+
+            if (actionHistory.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 font-medium">${t.noHistory}</div>`;
+                return;
+            }
+
+            let html = '';
+            actionHistory.forEach(item => {
+                let playerTag = item.player ? `<span class="bg-purple-600/10 dark:bg-purple-400/10 text-purple-600 dark:text-purple-300 px-1.5 py-0.5 rounded text-[10px] font-bold">${item.player}</span>` : '';
+                html += `
+                    <div class="flex items-start justify-between gap-2 p-2.5 bg-slate-100 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 rounded-xl text-xs">
+                        <div class="flex flex-col gap-0.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-slate-800 dark:text-white">${item.type}</span>
+                                ${playerTag}
+                            </div>
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400">${item.details}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 font-mono">${item.time}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function playRollSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                if (!audioCtx) audioCtx = new AudioContext();
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const ctx = audioCtx;
+                const masterGain = ctx.createGain();
+                masterGain.gain.setValueAtTime(0.2, ctx.currentTime);
+                masterGain.connect(ctx.destination);
+
+                for (let i = 0; i < 6; i++) {
+                    const time = ctx.currentTime + i * 0.03 + Math.random() * 0.01;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200 + Math.random() * 300, time);
+                    osc.frequency.exponentialRampToValueAtTime(40, time + 0.05);
+
+                    gain.gain.setValueAtTime(0.3, time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+                    osc.connect(gain);
+                    gain.connect(masterGain);
+
+                    osc.start(time);
+                    osc.stop(time + 0.05);
+                }
+            } catch (e) {
+                console.warn("Audio playback error:", e);
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'uk') ? 'en' : 'uk';
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const t = translations[currentLang];
+
+            const safeSetText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            };
+
+            const safeQuerySetText = (selector, text) => {
+                const el = document.querySelector(selector);
+                if (el) el.innerText = text;
+            };
+
+            const langLabel = document.getElementById('langLabel');
+            if (langLabel) langLabel.innerText = currentLang.toUpperCase();
+
+            // Update mode button icon and text label based on current visualMode and language
+            const modeIcon = document.getElementById('modeIcon');
+            if (modeIcon) {
+                modeIcon.innerText = visualMode === 'dots' ? '🎲' : '🔢';
+            }
+            const modeTextLabel = document.getElementById('modeTextLabel');
+            if (modeTextLabel) {
+                modeTextLabel.innerText = visualMode === 'dots' ? t.dots : t.nums;
+            }
+
+            safeQuerySetText('[data-i18n-roll-1]', t.roll1);
+            safeQuerySetText('[data-i18n-roll-2]', t.roll2);
+            safeQuerySetText('[data-i18n-reroll-selected]', t.rerollSelected);
+            safeQuerySetText('[data-i18n-color]', t.color);
+            safeQuerySetText('[data-i18n-current-turn]', t.currentTurn);
+            safeQuerySetText('[data-i18n-players-list]', t.playersList);
+            safeQuerySetText('[data-i18n-history-btn]', t.historyBtn);
+            safeQuerySetText('[data-i18n-history-title]', t.historyTitle);
+            safeQuerySetText('[data-i18n-clear-history]', t.clearHistory);
+            safeQuerySetText('[data-i18n-no-history]', t.noHistory);
+            safeQuerySetText('[data-i18n-formula-title]', t.formulaTitle);
+            safeQuerySetText('[data-i18n-enter-formula]', t.enterFormula);
+            safeQuerySetText('[data-i18n-clear]', t.clear);
+            safeQuerySetText('[data-i18n-calc-result]', t.calcResult);
+            safeQuerySetText('[data-i18n-funcs-ref]', t.funcsRef);
+            safeQuerySetText('[data-i18n-vars-desc]', t.varsDesc);
+            safeQuerySetText('[data-i18n-close-done]', t.closeDone || (currentLang === 'uk' ? 'Готово' : 'Done'));
+
+            safeSetText('modalTitle', t.settingsTitle);
+            safeSetText('facesLabel', t.facesLabel);
+            safeSetText('customFacesLabel', t.customFaces);
+            safeSetText('allowZeroTitle', t.allowZeroTitle);
+            safeSetText('allowZeroDesc', t.allowZeroDesc);
+            safeSetText('playerTurnsTitle', t.playerTurnsTitle);
+            safeSetText('playerTurnsDesc', t.playerTurnsDesc);
+            safeSetText('closeModalBtn', t.saveClose);
+            safeQuerySetText('[data-i18n-color-tag]', t.colorTag);
+            safeQuerySetText('[data-i18n-reroll-single]', t.rerollSingle);
+            safeQuerySetText('[data-i18n-die-settings]', t.dieSettings);
+
+            updateSelectedUI();
+            renderAll();
+            renderHistoryList();
+        }
+
+        function toggleVisualMode() {
+            visualMode = (visualMode === 'dots') ? 'nums' : 'dots';
+            if (visualMode === 'dots' && dieFaces > 9) {
+                dieFaces = 9;
+            }
+            applyLanguage();
+        }
+
+        function togglePlayerModeSetting(enabled) {
+            playerModeEnabled = enabled;
+            const container = document.getElementById('playerConfigContainer');
+            if (container) {
+                if (enabled) {
+                    container.classList.remove('hidden');
+                    const input = document.getElementById('playerNamesInput');
+                    if (input && !input.value) input.value = playerNames.join(', ');
+                } else {
+                    container.classList.add('hidden');
+                }
+            }
+            renderAll();
+        }
+
+        function onPlayerNamesCommaChange(value) {
+            const parts = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (parts.length > 0) {
+                playerNames = parts.slice(0, 8);
+            } else {
+                playerNames = [currentLang === 'uk' ? 'Гравець 1' : 'Player 1'];
+            }
+            if (activePlayerIndex >= playerNames.length) {
+                activePlayerIndex = 0;
+            }
+            updatePlayerBanner();
+            evaluateFormula();
+        }
+
+        function passTurn() {
+            if (!playerModeEnabled || playerNames.length === 0) return;
+            const prevPlayer = playerNames[activePlayerIndex];
+            activePlayerIndex = (activePlayerIndex + 1) % playerNames.length;
+            const nextPlayer = playerNames[activePlayerIndex];
+
+            const t = translations[currentLang];
+            addActionLog(t.actPassTurn || 'Передача ходу', `${prevPlayer} ➡️ ${nextPlayer}`);
+
+            updatePlayerBanner();
+        }
+
+        function updatePlayerBanner() {
+            const banner = document.getElementById('playerTurnBanner');
+            const passBtn = document.getElementById('passTurnBtn');
+            const nameDisplay = document.getElementById('activePlayerNameDisplay');
+
+            if (!playerModeEnabled) {
+                if (banner) banner.classList.add('hidden');
+                if (passBtn) passBtn.classList.add('hidden');
+                return;
+            }
+
+            if (banner) banner.classList.remove('hidden');
+            if (passBtn) passBtn.classList.remove('hidden');
+            
+            if (nameDisplay && playerNames[activePlayerIndex]) {
+                nameDisplay.innerText = playerNames[activePlayerIndex];
+            }
+        }
+
+        function adjustDiceCount(delta) {
+            let count = diceList.length + delta;
+            if (count < 1) count = 1;
+            if (count > 12) count = 12;
+
+            const t = translations[currentLang];
+
+            if (count > diceList.length) {
+                const allowZeroToggle = document.getElementById('allowZeroToggle');
+                const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+                const minVal = allowZero ? 0 : 1;
+                while (diceList.length < count) {
+                    const newDieId = nextDieId++;
+                    const newVal = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                    diceList.push({
+                        id: newDieId,
+                        value: newVal,
+                        color: null,
+                        recentlyRolled: true
+                    });
+                    addActionLog(t.actAddDice, `#${newDieId} (${newVal})`);
+                }
+            } else {
+                while (diceList.length > count) {
+                    const removed = diceList.pop();
+                    if (removed) {
+                        selectedDiceIds.delete(removed.id);
+                        addActionLog(t.actRemoveDice, `#${removed.id}`);
+                    }
+                }
+            }
+            updateSelectedUI();
+            renderAll();
+        }
+
+        function toggleSelectAll() {
+            const allSelected = selectedDiceIds.size === diceList.length && diceList.length > 0;
+            
+            diceList.forEach(d => {
+                d.recentlyRolled = false;
+                if (allSelected) {
+                    selectedDiceIds.delete(d.id);
+                } else {
+                    selectedDiceIds.add(d.id);
+                }
+            });
+            hideGroupColorPicker();
+            updateSelectedUI();
+            renderAll();
+        }
+
+        function toggleSelectDie(dieId, cardEl, event) {
+            if (event && event.target.closest('.die-gear-btn')) {
+                openDieControlModal(dieId);
+                return;
+            }
+
+            const d = diceList.find(item => item.id === dieId);
+            if (d) d.recentlyRolled = false;
+
+            if (selectedDiceIds.has(dieId)) {
+                selectedDiceIds.delete(dieId);
+            } else {
+                selectedDiceIds.add(dieId);
+            }
+            hideGroupColorPicker();
+            updateSelectedUI();
+            renderAll();
+        }
+
+        function toggleGroupColorPicker() {
+            const popover = document.getElementById('groupColorPopover');
+            if (popover) {
+                popover.classList.toggle('hidden');
+            }
+        }
+
+        function hideGroupColorPicker() {
+            const popover = document.getElementById('groupColorPopover');
+            if (popover) {
+                popover.classList.add('hidden');
+            }
+        }
+
+        function setGroupColor(color) {
+            if (selectedDiceIds.size === 0) return;
+            selectedDiceIds.forEach(id => {
+                const d = diceList.find(item => item.id === id);
+                if (d) {
+                    d.color = color;
+                }
+            });
+            const t = translations[currentLang];
+            addActionLog(t.actColor, `${selectedDiceIds.size} кубиків ➡️ ${color || 'немає'}`);
+
+            hideGroupColorPicker();
+            renderAll();
+        }
+
+        function rollAllDice() {
+            if (isRolling) return;
+
+            isRolling = true;
+            selectedDiceIds.clear();
+            hideGroupColorPicker();
+            updateSelectedUI();
+            playRollSound();
+
+            const rollBtn = document.getElementById('rollBtn');
+            if (rollBtn) rollBtn.disabled = true;
+
+            document.querySelectorAll('.dice-card').forEach(card => card.classList.add('rolling'));
+
+            setTimeout(() => {
+                const allowZeroToggle = document.getElementById('allowZeroToggle');
+                const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+                const minVal = allowZero ? 0 : 1;
+
+                let sum = 0;
+                diceList.forEach(d => {
+                    d.value = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                    d.recentlyRolled = true;
+                    sum += d.value;
+                });
+
+                const t = translations[currentLang];
+                addActionLog(t.actRollAll, `Сума: ${sum} (${diceList.map(d=>d.value).join(', ')})`);
+
+                if (playerModeEnabled && playerNames.length > 0) {
+                    activePlayerIndex = (activePlayerIndex + 1) % playerNames.length;
+                }
+
+                renderAll();
+                isRolling = false;
+                if (rollBtn) rollBtn.disabled = false;
+            }, 350);
+        }
+
+        function rollSelectedDice() {
+            if (isRolling || selectedDiceIds.size === 0) return;
+
+            isRolling = true;
+            hideGroupColorPicker();
+            playRollSound();
+
+            selectedDiceIds.forEach(id => {
+                const card = document.querySelector(`[data-die-id="${id}"]`);
+                if (card) card.classList.add('rolling');
+            });
+
+            setTimeout(() => {
+                const allowZeroToggle = document.getElementById('allowZeroToggle');
+                const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+                const minVal = allowZero ? 0 : 1;
+
+                let rolledVals = [];
+                selectedDiceIds.forEach(id => {
+                    const d = diceList.find(item => item.id === id);
+                    if (d) {
+                        d.value = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                        d.recentlyRolled = true;
+                        rolledVals.push(`#${d.id}=${d.value}`);
+                    }
+                });
+
+                const t = translations[currentLang];
+                addActionLog(t.actRollSelected, rolledVals.join(', '));
+
+                selectedDiceIds.clear();
+                updateSelectedUI();
+                renderAll();
+                isRolling = false;
+            }, 350);
+        }
+
+        function openDieControlModal(dieId) {
+            activeDieId = dieId;
+            const modal = document.getElementById('dieControlModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeDieControlModal() {
+            const modal = document.getElementById('dieControlModal');
+            if (modal) modal.classList.add('hidden');
+            activeDieId = null;
+        }
+
+        function setDieColor(color) {
+            if (activeDieId === null) return;
+            const d = diceList.find(item => item.id === activeDieId);
+            if (d) {
+                d.color = color;
+                const t = translations[currentLang];
+                addActionLog(t.actColor, `#${d.id} ➡️ ${color || 'немає'}`);
+            }
+            closeDieControlModal();
+            renderAll();
+        }
+
+        function rerollActiveDieModal() {
+            if (activeDieId === null) return;
+            playRollSound();
+            const allowZeroToggle = document.getElementById('allowZeroToggle');
+            const allowZero = allowZeroToggle ? allowZeroToggle.checked : false;
+            const minVal = allowZero ? 0 : 1;
+
+            const d = diceList.find(item => item.id === activeDieId);
+            if (d) {
+                d.value = Math.floor(Math.random() * (dieFaces - minVal + 1)) + minVal;
+                d.recentlyRolled = true;
+                const t = translations[currentLang];
+                addActionLog(t.actRollSingle, `#${d.id} = ${d.value}`);
+            }
+
+            closeDieControlModal();
+            renderAll();
+        }
+
+        function removeActiveDie() {
+            if (activeDieId === null) return;
+            diceList = diceList.filter(item => item.id !== activeDieId);
+            selectedDiceIds.delete(activeDieId);
+            const t = translations[currentLang];
+            addActionLog(t.actRemoveDice, `#${activeDieId}`);
+
+            closeDieControlModal();
+            updateSelectedUI();
+            renderAll();
+        }
+
+        function updateSelectedUI() {
+            const container = document.getElementById('selectedActionContainer');
+            const badge = document.getElementById('selectedCountBadge');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const t = translations[currentLang];
+
+            const allSelected = selectedDiceIds.size === diceList.length && diceList.length > 0;
+
+            if (selectAllBtn) {
+                selectAllBtn.title = allSelected ? t.deselectAll : t.selectAll;
+                if (allSelected) {
+                    selectAllBtn.className = "w-9 h-9 bg-purple-600 text-white text-xs font-semibold rounded-xl flex items-center justify-center transition-all shadow-sm active:scale-95";
+                } else {
+                    selectAllBtn.className = "w-9 h-9 bg-slate-200/80 dark:bg-slate-800/80 hover:bg-purple-600 hover:text-white text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl flex items-center justify-center transition-all shadow-sm active:scale-95";
+                }
+            }
+
+            if (selectedDiceIds.size > 0) {
+                if (container) container.classList.remove('hidden');
+                if (badge) badge.innerText = selectedDiceIds.size;
+            } else {
+                if (container) container.classList.add('hidden');
+            }
+        }
+
+        function renderAll() {
+            const grid = document.getElementById('diceGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            diceList.forEach((die, index) => {
+                const isSelected = selectedDiceIds.has(die.id);
+                const letter = alphabetLetters[index] || `#${index + 1}`;
+
+                const card = document.createElement('div');
+                
+                let cardClasses = `dice-card w-full aspect-square bg-white/90 dark:bg-slate-900/90 border rounded-2xl p-2 flex flex-col items-center justify-between relative shadow-sm transition-all group cursor-pointer`;
+                
+                if (isSelected) {
+                    cardClasses += ` ring-2 ring-purple-500 border-purple-500 bg-purple-50 dark:bg-purple-950/40`;
+                } else if (die.color && colorMap[die.color]) {
+                    cardClasses += ` ${colorMap[die.color]}`;
+                } else {
+                    cardClasses += ` border-slate-200/80 dark:border-slate-800/80 hover:border-purple-500/50`;
+                }
+
+                if (die.recentlyRolled) {
+                    cardClasses += ` recently-rolled`;
+                }
+
+                card.className = cardClasses;
+                card.dataset.dieId = die.id;
+
+                card.onclick = (e) => toggleSelectDie(die.id, card, e);
+
+                const headerTag = document.createElement('div');
+                headerTag.className = "w-full flex items-center justify-between px-1 text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 tracking-wider";
+                
+                let dotIndicator = die.color ? `<span class="w-2 h-2 rounded-full inline-block bg-${die.color === 'red' ? 'rose' : die.color === 'orange' ? 'amber' : die.color === 'green' ? 'emerald' : die.color === 'blue' ? 'sky' : 'purple'}-500 mr-1"></span>` : '';
+                headerTag.innerHTML = `<span class="flex items-center">${dotIndicator}${letter}</span><button class="die-gear-btn opacity-60 group-hover:opacity-100 hover:text-purple-600 transition-all p-0.5" title="Налаштування кубика">⚙️</button>`;
+                card.appendChild(headerTag);
+
+                if (visualMode === 'dots') {
+                    const dotContainer = document.createElement('div');
+                    dotContainer.className = "w-11 h-11 sm:w-14 sm:h-14 bg-slate-100 dark:bg-slate-950/80 rounded-xl border border-slate-200/80 dark:border-slate-800/80 p-0.5 grid grid-cols-3 grid-rows-3 gap-0.5 items-center justify-center shadow-inner my-auto";
+                    
+                    const activeIndices = dotPatterns[die.value] || [];
+                    const activeDotClass = die.color && dotColorMap[die.color] ? dotColorMap[die.color] : 'bg-purple-600 dark:bg-indigo-300 glow-dot';
+
+                    for (let d = 0; d < 9; d++) {
+                        const dot = document.createElement('div');
+                        if (die.value === 0) {
+                            dot.className = "w-full h-full rounded-md inactive-dot transition-all";
+                        } else if (activeIndices.includes(d)) {
+                            dot.className = `w-full h-full rounded-md ${activeDotClass} transition-all`;
+                        } else {
+                            dot.className = "w-full h-full rounded-md inactive-dot transition-all";
+                        }
+                        dotContainer.appendChild(dot);
+                    }
+                    card.appendChild(dotContainer);
+                } else {
+                    const numContainer = document.createElement('div');
+                    numContainer.className = "w-11 h-11 sm:w-14 sm:h-14 bg-slate-100 dark:bg-slate-950/80 rounded-xl border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-center shadow-inner my-auto";
+                    
+                    const numberDisplay = document.createElement('span');
+                    if (die.value === 0) {
+                        numberDisplay.className = "text-lg font-bold text-slate-300 dark:text-slate-700";
+                        numberDisplay.innerText = "0";
+                    } else {
+                        numberDisplay.className = "text-base sm:text-xl font-extrabold bg-gradient-to-tr from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-300 bg-clip-text text-transparent";
+                        numberDisplay.innerText = die.value;
+                    }
+                    numContainer.appendChild(numberDisplay);
+                    card.appendChild(numContainer);
+                }
+
+                const newLabel = document.createElement('div');
+                newLabel.className = "text-[11px] font-extrabold text-slate-700 dark:text-slate-300 h-3 flex items-center justify-center pb-0.5";
+                newLabel.innerText = die.value === 0 ? "—" : `${die.value}`;
+                card.appendChild(newLabel);
+
+                grid.appendChild(card);
+            });
+
+            const bdc = document.getElementById('bottomDiceCount');
+            if (bdc) bdc.innerText = diceList.length;
+
+            updatePlayerBanner();
+            evaluateFormula();
+        }
+
+        function setDieType(faces) {
+            if (visualMode === 'dots' && faces > 9) faces = 9;
+            dieFaces = faces;
+            const cf = document.getElementById('customFaces');
+            if (cf) cf.value = faces;
+
+            ['d4', 'd6', 'd9', 'd20'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (btn) btn.className = "py-2 rounded-xl border border-slate-300 dark:border-slate-800 bg-slate-200/50 dark:bg-slate-800/40 text-xs font-semibold hover:border-purple-500 transition-all text-slate-700 dark:text-slate-300";
+            });
+            const activeBtn = document.getElementById(`btn-d${faces}`);
+            if (activeBtn) activeBtn.className = "py-2 rounded-xl border border-purple-500 bg-purple-600/20 text-purple-700 dark:text-purple-300 text-xs font-semibold shadow-sm shadow-purple-500/20 transition-all";
+        }
+
+        function onCustomFacesChange(val) {
+            let num = parseInt(val);
+            if (isNaN(num)) num = 6;
+            if (num < 2) num = 2;
+            if (num > 64) num = 64;
+            if (visualMode === 'dots' && num > 9) num = 9;
+            dieFaces = num;
+            const cf = document.getElementById('customFaces');
+            if (cf) cf.value = num;
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', function(e) {
+            const groupColorPopover = document.getElementById('groupColorPopover');
+            if (groupColorPopover && !groupColorPopover.classList.contains('hidden')) {
+                if (!e.target.closest('#groupColorBtn') && !e.target.closest('#groupColorPopover')) {
+                    hideGroupColorPicker();
+                }
+            }
+        });
+
+        window.onload = function() {
+            currentLang = 'uk';
+            visualMode = 'dots';
+            diceList.forEach(d => d.recentlyRolled = false);
+            applyLanguage();
+        };
+    </script>
+</body>
+</html>
