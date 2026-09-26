@@ -1,7 +1,7 @@
 {
   "name": "Board Game Tools",
   "short_name": "BGameTools",
-  "start_url": "/",
+  "start_url": "/BGameTools",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",
