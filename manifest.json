@@ -11,10 +11,5 @@
       "sizes": "500x500",
       "type": "image/png"
     },
-    {
-      "src": "./icon-220x220.png",
-      "sizes": "220x220",
-      "type": "image/png"
-    }
   ]
 }
