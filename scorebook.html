@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scorebook & Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+        .pulse-active {
+            animation: pulseGlow 0.4s ease-out;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col landscape:flex-row justify-between selection:bg-purple-500 selection:text-white overflow-x-hidden transition-colors duration-300">
+
+    <header class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-b landscape:border-b-0 landscape:border-r border-slate-200/80 dark:border-slate-800/60 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md sticky top-0 landscape:fixed landscape:left-0 z-50">
+        <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-start gap-3">
+            <div class="flex landscape:flex-col items-center gap-1.5 p-1 bg-transparent border border-slate-300/40 dark:border-slate-800/50 rounded-2xl backdrop-blur-sm">
+                <!-- Language Toggle Button -->
+                <button id="langToggleBtn" onclick="toggleLanguage()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Switch Language">
+                    🌐 <span id="langLabel">EN</span>
+                </button>
+
+                <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
+
+                <!-- Global History Button -->
+                <button onclick="toggleGlobalHistoryModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Global History">
+                    📜 <span class="hidden sm:inline" data-i18n-history-btn>History</span>
+                </button>
+
+                <div class="w-px h-4 landscape:w-4 landscape:h-px bg-slate-300/60 dark:bg-slate-800/80"></div>
+
+                <!-- Rounds History Button -->
+                <button onclick="toggleRoundHistoryModal()" class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all bg-slate-200/60 dark:bg-slate-900/60 hover:bg-slate-300 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-sm text-center flex items-center gap-1" title="Rounds History">
+                    🏆 <span class="hidden sm:inline" data-i18n-rounds-btn>Rounds</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-5xl w-full mx-auto px-2 sm:px-4 py-4 landscape:pl-24 landscape:pr-4 flex flex-col gap-4 mb-28 landscape:mb-0 relative z-10">
+        
+        <!-- Top Control Bar -->
+        <div id="scoreBarCard" class="flex flex-wrap items-center justify-between gap-2 bg-white/40 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-800/80 px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl backdrop-blur-md transition-all duration-300 shadow-sm min-h-[52px] relative z-20">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 bg-purple-600/10 dark:bg-purple-950/40 border border-purple-500/30 px-2.5 py-1 rounded-xl">
+                    <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase" data-i18n-round-label>Round</span>
+                    <span id="currentRoundDisplay" class="text-xs font-extrabold text-purple-700 dark:text-purple-300 font-mono">1</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-leader>Leader:</span>
+                    <span id="leaderNameDisplay" class="text-xs font-extrabold text-purple-600 dark:text-purple-400">-</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="finishRound()" class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-md active:scale-95">
+                    <span>🏁</span>
+                    <span data-i18n-finish-round>Finish Round</span>
+                </button>
+                <button onclick="resetAllScores()" class="px-3 py-1.5 bg-slate-200/80 dark:bg-slate-800/80 hover:bg-rose-600 hover:text-white text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-sm active:scale-95" title="Reset Scores">
+                    <span>🔄</span>
+                    <span class="hidden sm:inline" data-i18n-reset-scores>Reset Scores</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Players Grid -->
+        <div class="flex-1 w-full flex flex-col gap-3 relative z-10">
+            <div class="grid grid-cols-2 md:grid-cols-3 landscape:grid-cols-3 gap-2 sm:gap-3.5 items-center justify-center w-full py-2" id="playersGrid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="w-full landscape:w-auto landscape:h-screen py-3 px-4 border-t landscape:border-t-0 landscape:border-l border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md fixed landscape:right-0 bottom-0 z-50 shadow-2xl landscape:shadow-none">
+        <div class="max-w-5xl mx-auto landscape:mx-0 flex landscape:flex-col items-center justify-between landscape:justify-center gap-2 sm:gap-3 h-full">
+            
+            <!-- Add Player Button -->
+            <button onclick="openAddPlayerModal()" class="flex-1 min-w-0 landscape:flex-none py-3 px-4 sm:px-6 landscape:py-3 landscape:px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-[length:200%_auto] hover:bg-[position:right_center] text-white text-xs sm:text-base landscape:text-xs font-bold rounded-2xl shadow-lg shadow-purple-600/30 transition-all transform active:scale-95 flex items-center justify-center gap-2 truncate">
+                <span>➕</span>
+                <span data-i18n-add-player>Add Player</span>
+            </button>
+
+            <!-- STANDALONE CALCULATOR BUTTON (Icon only, no text) -->
+            <button onclick="openCalculatorModal()" class="w-12 h-12 bg-slate-800 dark:bg-slate-800 hover:bg-slate-700 text-white rounded-2xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center text-xl shrink-0" title="Calculator">
+                🧮
+            </button>
+
+            <!-- Settings / Management Modal Trigger Button -->
+            <button onclick="toggleSettingsModal()" class="w-11 h-11 bg-slate-200/70 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl flex items-center justify-center transition-all shadow-md shrink-0" title="Manage Players">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <div id="calculatorModal" class="fixed inset-0 z-[100] bg-slate-950 text-slate-100 flex flex-col hidden animate-in fade-in duration-200">
+        <!-- Top Bar inside Calculator -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md">
+            <div class="flex items-center gap-3">
+                <!-- History button inside calculator top-left -->
+                <button onclick="toggleCalcHistory()" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-all" title="Calculation History">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </button>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Close Calculator Button -->
+                <button onclick="closeCalculatorModal()" class="p-2 text-slate-300 hover:text-white rounded-xl hover:bg-slate-800 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Calculator Display Area (Shows full expression like 5*6) -->
+        <div class="flex-1 flex flex-col justify-end px-6 py-4 max-w-sm w-full mx-auto relative overflow-hidden">
+            
+            <!-- Slide-over or overlay calculator history panel -->
+            <div id="calcHistoryOverlay" class="absolute inset-0 bg-slate-900/95 backdrop-blur-md z-20 flex flex-col p-5 hidden transform transition-transform">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+                    <span class="text-sm font-bold text-slate-300" data-i18n-calc-history-title>Calculation History</span>
+                    <button onclick="toggleCalcHistory()" class="text-xs text-purple-400 hover:underline" data-i18n-close>Close</button>
+                </div>
+                <div id="calcHistoryList" class="flex-1 overflow-y-auto flex flex-col gap-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Expression Screen -->
+            <div class="flex flex-col items-end gap-1 w-full min-h-[100px] justify-end">
+                <div id="calcExpression" class="text-3xl sm:text-4xl font-mono font-medium text-slate-200 tracking-wider break-all text-right w-full min-h-[48px]"></div>
+            </div>
+        </div>
+
+        <!-- Calculator Keypad (Fully rounded circular buttons with 0px gap grid) -->
+        <div class="w-full max-w-xs sm:max-w-sm mx-auto p-4 grid grid-cols-4 gap-0 pb-8">
+            <button onclick="calcClear()" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-purple-400 text-xl font-bold transition-all active:scale-95 flex items-center justify-center">AC</button>
+            <button onclick="calcAppendParenthesis()" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xl font-bold transition-all active:scale-95 flex items-center justify-center">( )</button>
+            <button onclick="calcPercent()" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xl font-bold transition-all active:scale-95 flex items-center justify-center">%</button>
+            <button onclick="calcAppend('÷')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-purple-300 text-2xl font-bold transition-all active:scale-95 flex items-center justify-center">÷</button>
+
+            <button onclick="calcAppend('7')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">7</button>
+            <button onclick="calcAppend('8')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">8</button>
+            <button onclick="calcAppend('9')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">9</button>
+            <button onclick="calcAppend('×')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-purple-300 text-2xl font-bold transition-all active:scale-95 flex items-center justify-center">×</button>
+
+            <button onclick="calcAppend('4')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">4</button>
+            <button onclick="calcAppend('5')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">5</button>
+            <button onclick="calcAppend('6')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">6</button>
+            <button onclick="calcAppend('-')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-purple-300 text-2xl font-bold transition-all active:scale-95 flex items-center justify-center">-</button>
+
+            <button onclick="calcAppend('1')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">1</button>
+            <button onclick="calcAppend('2')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">2</button>
+            <button onclick="calcAppend('3')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">3</button>
+            <button onclick="calcAppend('+')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-800 hover:bg-slate-700 text-purple-300 text-2xl font-bold transition-all active:scale-95 flex items-center justify-center">+</button>
+
+            <button onclick="calcAppend('0')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-medium transition-all active:scale-95 flex items-center justify-center">0</button>
+            <button onclick="calcAppend('.')" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-2xl font-bold transition-all active:scale-95 flex items-center justify-center">.</button>
+            <button onclick="calcBackSpace()" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xl font-bold transition-all active:scale-95 flex items-center justify-center">⌫</button>
+            <button onclick="calcEvaluate()" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-rose-400 hover:bg-rose-300 text-slate-950 text-3xl font-bold transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-rose-500/30">=</button>
+        </div>
+    </div>
+
+    <!-- Player History Modal -->
+    <div id="playerHistoryModal" class="fixed inset-0 pointer-events-none z-[80] flex flex-col justify-end sm:justify-center items-center hidden bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 w-full h-full sm:h-[85vh] sm:max-w-2xl sm:rounded-3xl border-0 sm:border border-slate-300 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">📜</span>
+                    <div>
+                        <h3 id="modalPlayerTitle" class="text-sm sm:text-base font-bold text-slate-800 dark:text-white">Player History</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400" data-i18n-history-subtitle>Operations and calculated results log</p>
+                    </div>
+                </div>
+                <button onclick="closePlayerHistoryModal()" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/55 transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div id="playerHistoryContentList" class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-2.5"></div>
+
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 flex items-center justify-center">
+                <div class="bg-slate-200 dark:bg-slate-800 p-1 rounded-2xl flex items-center gap-1 w-full max-w-md shadow-inner">
+                    <button id="toggleOpsBtn" onclick="setPlayerHistoryMode('ops')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm flex items-center justify-center gap-1.5">
+                        <span>⚡</span>
+                        <span data-i18n-mode-ops>Operations (+, -, *, /)</span>
+                    </button>
+                    <button id="toggleResBtn" onclick="setPlayerHistoryMode('results')" class="flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1.5">
+                        <span>📊</span>
+                        <span data-i18n-mode-results>Score Results History</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Round History Modal -->
+    <div id="roundHistoryModal" class="fixed inset-0 pointer-events-none z-[80] flex flex-col justify-end sm:justify-center items-center hidden bg-black/60 backdrop-blur-sm p-0 sm:p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 w-full h-full sm:h-[85vh] sm:max-w-2xl sm:rounded-3xl border-0 sm:border border-slate-300 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-xl">🏆</span>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-bold text-slate-800 dark:text-white" data-i18n-rounds-modal-title>Rounds History</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400" data-i18n-rounds-modal-subtitle>Finished rounds results and standings</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearRoundHistory()" class="text-[11px] font-semibold text-rose-500 hover:underline px-2 py-1" data-i18n-clear-rounds>Clear</button>
+                    <button onclick="toggleRoundHistoryModal()" class="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-800/55 transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="roundHistoryContentList" class="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-3"></div>
+        </div>
+    </div>
+
+    <!-- Global History Modal -->
+    <div id="historyModal" class="fixed inset-0 pointer-events-none z-[75] flex items-center justify-center hidden bg-black/50 backdrop-blur-xs p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4 max-h-[80vh]">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-history-title>Global Action History</h3>
+                    <span id="historyCountBadge" class="bg-purple-600/20 text-purple-700 dark:text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearHistory()" class="text-[11px] font-semibold text-rose-500 hover:underline px-2 py-1" data-i18n-clear-history>Clear</button>
+                    <button onclick="toggleGlobalHistoryModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="historyListContainer" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 min-h-[220px] max-h-[50vh]">
+                <div class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 font-medium" data-i18n-no-history>No actions recorded yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Player Modal -->
+    <div id="addPlayerModal" class="fixed inset-0 pointer-events-none z-[60] flex items-center justify-center hidden bg-black/40 backdrop-blur-xs p-4">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-xs w-full p-5 shadow-2xl flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-add-player-title>Add New Player</h3>
+                <button onclick="closeAddPlayerModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-player-name-label>Player Name</label>
+                <input type="text" id="newPlayerNameInput" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 font-medium" placeholder="Enter name...">
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button onclick="confirmAddPlayer()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md" data-i18n-save>Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 pointer-events-none z-[60] flex items-end landscape:items-center landscape:justify-end justify-center hidden">
+        <div class="pointer-events-auto bg-white dark:bg-slate-900 border-t landscape:border-t-0 landscape:border-l border-x border-slate-300 dark:border-slate-800 rounded-t-3xl landscape:rounded-t-none landscape:rounded-l-3xl max-w-5xl landscape:max-w-md w-full landscape:h-full p-6 shadow-2xl flex flex-col gap-5 max-h-[85vh] landscape:max-h-none overflow-y-auto transform transition-transform duration-300">
+            <div class="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-1 landscape:hidden"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white" data-i18n-settings-title>Players Management</h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n-players-list>Active Players List</span>
+                <div id="settingsPlayersList" class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-1"></div>
+            </div>
+
+            <button onclick="toggleSettingsModal()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-lg shadow-purple-600/30" data-i18n-close>Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'en';
+        let currentRound = 1;
+        let players = [
+            { id: 1, name: 'Player 1', score: 10, color: 'purple', history: [] },
+            { id: 2, name: 'Player 2', score: 5, color: 'blue', history: [] }
+        ];
+        let nextPlayerId = 3;
+        let actionHistory = [];
+        let roundHistory = [];
+
+        // Active Player History modal state
+        let activeHistoryPlayerId = null;
+        let playerHistoryViewMode = 'ops';
+
+        // Calculator state (stores expression string and history)
+        let calcExpressionStr = '';
+        let calcHistory = [];
+
+        const MIN_SCORE = -999999;
+        const MAX_SCORE = 99999999;
+
+        function setCookie(name, value, days = 365) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            let expires = "expires=" + d.toUTCString();
+            document.cookie = name + "=" + encodeURIComponent(JSON.stringify(value)) + ";" + expires + ";path=/;SameSite=Lax";
+        }
+
+        function getCookie(name) {
+            let nameEQ = name + "=";
+            let ca = document.cookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) {
+                    try {
+                        return JSON.parse(decodeURIComponent(c.substring(nameEQ.length, c.length)));
+                    } catch(e) {
+                        return null;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function saveStateToCookies() {
+            setCookie('ppm_lang', currentLang);
+            setCookie('ppm_round', currentRound);
+            setCookie('ppm_players', players);
+            setCookie('ppm_nextId', nextPlayerId);
+            setCookie('ppm_actionHistory', actionHistory);
+            setCookie('ppm_roundHistory', roundHistory);
+            setCookie('ppm_calcHistory', calcHistory);
+        }
+
+        function loadStateFromCookies() {
+            const savedLang = getCookie('ppm_lang');
+            if (savedLang) currentLang = savedLang;
+
+            const savedRound = getCookie('ppm_round');
+            if (savedRound) currentRound = savedRound;
+
+            const savedPlayers = getCookie('ppm_players');
+            if (savedPlayers && Array.isArray(savedPlayers)) players = savedPlayers;
+
+            const savedNextId = getCookie('ppm_nextId');
+            if (savedNextId) nextPlayerId = savedNextId;
+
+            const savedHistory = getCookie('ppm_actionHistory');
+            if (savedHistory && Array.isArray(savedHistory)) actionHistory = savedHistory;
+
+            const savedRoundHistory = getCookie('ppm_roundHistory');
+            if (savedRoundHistory && Array.isArray(savedRoundHistory)) roundHistory = savedRoundHistory;
+
+            const savedCalcHistory = getCookie('ppm_calcHistory');
+            if (savedCalcHistory && Array.isArray(savedCalcHistory)) calcHistory = savedCalcHistory;
+        }
+
+        const translations = {
+            uk: {
+                historyBtn: "Історія",
+                roundsBtn: "Раунди",
+                historyTitle: "Глобальна історія",
+                clearHistory: "Очистити",
+                noHistory: "Історія дій порожня.",
+                leader: "Лідер:",
+                roundLabel: "Раунд",
+                finishRound: "Завершити раунд",
+                resetScores: "Скинути бали",
+                addPlayer: "Додати гравця",
+                calculatorBtn: "Калькулятор",
+                addPlayerTitle: "Новий гравець",
+                playerNameLabel: "Ім'я гравця",
+                save: "Зберегти",
+                settingsTitle: "Керування гравцями",
+                playersList: "Список активних гравців",
+                close: "Закрити",
+                actAdd: "Додано гравця",
+                actRemove: "Видалено гравця",
+                actScore: "Змінено бали",
+                actReset: "Скидання балів",
+                actResetSingle: "Скидання балів гравця",
+                actFinishRound: "Завершено раунд",
+                historySubtitle: "Журнал операцій та розрахунків балів",
+                modeOps: "Операції (+, -, *, /)",
+                modeResults: "Історія результатів",
+                noPlayerHistory: "Для цього гравця ще немає записів історії.",
+                limitError: "Помилка: Перевищено ліміт балів (-999 999 до +99 999 999). Значення скинуто до 0!",
+                roundsModalTitle: "Історія раундів",
+                roundsModalSubtitle: "Результати завершених раундів",
+                clearRounds: "Очистити",
+                noRounds: "Ще немає завершених раундів.",
+                winner: "Переможець 🏆",
+                loser: "Програв 🔻",
+                playerScoresAtEnd: "Бали гравців у кінці раунду:",
+                calcHistoryTitle: "Історія обчислень"
+            },
+            en: {
+                historyBtn: "History",
+                roundsBtn: "Rounds",
+                historyTitle: "Global History",
+                clearHistory: "Clear",
+                noHistory: "No actions recorded yet.",
+                leader: "Leader:",
+                roundLabel: "Round",
+                finishRound: "Finish Round",
+                resetScores: "Reset Scores",
+                addPlayer: "Add Player",
+                calculatorBtn: "Calculator",
+                addPlayerTitle: "Add New Player",
+                playerNameLabel: "Player Name",
+                save: "Save",
+                settingsTitle: "Players Management",
+                playersList: "Active Players List",
+                close: "Close",
+                actAdd: "Added player",
+                actRemove: "Removed player",
+                actScore: "Updated score",
+                actReset: "Reset all scores",
+                actResetSingle: "Reset player score",
+                actFinishRound: "Finished round",
+                historySubtitle: "Operations and calculated results log",
+                modeOps: "Operations (+, -, *, /)",
+                modeResults: "Score Results History",
+                noPlayerHistory: "No history records for this player yet.",
+                limitError: "Error: Score limit exceeded (-999,999 to +99,999,999). Score reset to 0!",
+                roundsModalTitle: "Rounds History",
+                roundsModalSubtitle: "Results and standings of finished rounds",
+                clearRounds: "Clear",
+                noRounds: "No finished rounds yet.",
+                winner: "Winner 🏆",
+                loser: "Loser 🔻",
+                playerScoresAtEnd: "Player scores at the end of round:",
+                calcHistoryTitle: "Calculation History"
+            }
+        };
+
+        const colorClasses = [
+            { id: 'purple', bg: 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/20' },
+            { id: 'blue', bg: 'border-sky-500 bg-sky-50/40 dark:bg-sky-950/20' },
+            { id: 'green', bg: 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20' },
+            { id: 'orange', bg: 'border-amber-500 bg-amber-50/40 dark:bg-amber-950/20' },
+            { id: 'red', bg: 'border-rose-500 bg-rose-50/40 dark:bg-rose-950/20' }
+        ];
+
+        // Calculator Functions (Manual evaluation on pressing '=' only, with correct parenthesis handling)
+        function openCalculatorModal() {
+            const modal = document.getElementById('calculatorModal');
+            if (modal) modal.classList.remove('hidden');
+            updateCalcDisplay();
+        }
+
+        function closeCalculatorModal() {
+            const modal = document.getElementById('calculatorModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function calcClear() {
+            calcExpressionStr = '';
+            updateCalcDisplay();
+        }
+
+        function calcBackSpace() {
+            calcExpressionStr = calcExpressionStr.slice(0, -1);
+            updateCalcDisplay();
+        }
+
+        function calcAppend(char) {
+            calcExpressionStr += char;
+            updateCalcDisplay();
+        }
+
+        function calcAppendParenthesis() {
+            let openCount = (calcExpressionStr.match(/\(/g) || []).length;
+            let closeCount = (calcExpressionStr.match(/\)/g) || []).length;
+            let lastChar = calcExpressionStr.slice(-1);
+            let isLastCharDigit = /[0-9)]/.test(lastChar);
+
+            if (openCount > closeCount && isLastCharDigit) {
+                calcExpressionStr += ')';
+            } else {
+                if (calcExpressionStr.length > 0 && isLastCharDigit) {
+                    calcExpressionStr += '×';
+                }
+                calcExpressionStr += '(';
+            }
+            updateCalcDisplay();
+        }
+
+        function calcPercent() {
+            if (!calcExpressionStr) return;
+            calcExpressionStr += '%';
+            updateCalcDisplay();
+        }
+
+        function updateCalcDisplay() {
+            const exprEl = document.getElementById('calcExpression');
+            if (!exprEl) return;
+            exprEl.innerText = calcExpressionStr || '0';
+        }
+
+        function calcEvaluate() {
+            if (!calcExpressionStr) return;
+            try {
+                let evalStr = calcExpressionStr
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/%/g, '/100')
+                    .replace(/,/g, '.');
+
+                let result = Function('"use strict"; return (' + evalStr + ')')();
+                if (isFinite(result)) {
+                    let formattedResult = Number(result.toFixed(6)).toString();
+                    
+                    calcHistory.unshift({
+                        expression: calcExpressionStr,
+                        result: formattedResult,
+                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    });
+                    if (calcHistory.length > 30) calcHistory.pop();
+
+                    calcExpressionStr = formattedResult;
+                    updateCalcDisplay();
+                    saveStateToCookies();
+                } else {
+                    calcExpressionStr = 'Error';
+                    updateCalcDisplay();
+                }
+            } catch(e) {
+                calcExpressionStr = 'Error';
+                updateCalcDisplay();
+            }
+        }
+
+        function toggleCalcHistory() {
+            const overlay = document.getElementById('calcHistoryOverlay');
+            if (!overlay) return;
+            overlay.classList.toggle('hidden');
+            if (!overlay.classList.contains('hidden')) {
+                renderCalcHistoryList();
+            }
+        }
+
+        function renderCalcHistoryList() {
+            const container = document.getElementById('calcHistoryList');
+            if (!container) return;
+
+            if (calcHistory.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-xs text-slate-500">No calculations recorded.</div>`;
+                return;
+            }
+
+            let html = '';
+            calcHistory.forEach(item => {
+                html += `
+                    <div onclick="useCalcHistoryItem('${item.result}')" class="flex flex-col p-3 bg-slate-800/80 hover:bg-slate-800 rounded-xl cursor-pointer transition-all border border-slate-700/50">
+                        <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span>${item.expression}</span>
+                            <span>${item.time}</span>
+                        </div>
+                        <div class="text-lg font-bold font-mono text-white text-right">= ${item.result}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function useCalcHistoryItem(val) {
+            calcExpressionStr = val;
+            toggleCalcHistory();
+            updateCalcDisplay();
+        }
+
+        // Action logs & Scorebook core
+        function addActionLog(actionType, details) {
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            actionHistory.unshift({ time: timeStr, type: actionType, details: details });
+            if (actionHistory.length > 50) actionHistory.pop();
+            renderHistoryList();
+            saveStateToCookies();
+        }
+
+        function toggleGlobalHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            if (modal) modal.classList.toggle('hidden');
+        }
+
+        function clearHistory() {
+            actionHistory = [];
+            renderHistoryList();
+            saveStateToCookies();
+        }
+
+        function renderHistoryList() {
+            const container = document.getElementById('historyListContainer');
+            const badge = document.getElementById('historyCountBadge');
+            const t = translations[currentLang];
+            if (badge) badge.innerText = actionHistory.length;
+            if (!container) return;
+
+            if (actionHistory.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-xs text-slate-400 dark:text-slate-600 font-medium">${t.noHistory}</div>`;
+                return;
+            }
+
+            let html = '';
+            actionHistory.forEach(item => {
+                html += `
+                    <div class="flex items-start justify-between gap-2 p-2.5 bg-slate-100 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 rounded-xl text-xs">
+                        <div class="flex flex-col gap-0.5">
+                            <span class="font-bold text-slate-800 dark:text-white">${item.type}</span>
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400">${item.details}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 font-mono">${item.time}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function finishRound() {
+            if (players.length === 0) return;
+
+            let maxScore = players[0].score;
+            let minScore = players[0].score;
+            players.forEach(p => {
+                if (p.score > maxScore) maxScore = p.score;
+                if (p.score < minScore) minScore = p.score;
+            });
+
+            const roundSnapshot = {
+                roundNumber: currentRound,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                date: new Date().toLocaleDateString(),
+                playersSnapshot: players.map(p => ({
+                    name: p.name,
+                    score: p.score,
+                    isWinner: p.score === maxScore,
+                    isLoser: p.score === minScore && players.length > 1
+                }))
+            };
+
+            roundHistory.unshift(roundSnapshot);
+            if (roundHistory.length > 30) roundHistory.pop();
+
+            const t = translations[currentLang];
+            addActionLog(t.actFinishRound, `Round #${currentRound} finished. Winner score: ${maxScore}`);
+
+            currentRound++;
+            renderAll();
+            saveStateToCookies();
+            toggleRoundHistoryModal();
+        }
+
+        function toggleRoundHistoryModal() {
+            const modal = document.getElementById('roundHistoryModal');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) renderRoundHistoryContent();
+            }
+        }
+
+        function clearRoundHistory() {
+            roundHistory = [];
+            renderRoundHistoryContent();
+            saveStateToCookies();
+        }
+
+        function renderRoundHistoryContent() {
+            const container = document.getElementById('roundHistoryContentList');
+            const t = translations[currentLang];
+            if (!container) return;
+
+            if (roundHistory.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-xs text-slate-400 dark:text-slate-500 font-medium">${t.noRounds}</div>`;
+                return;
+            }
+
+            let html = '';
+            roundHistory.forEach(r => {
+                let playersHtml = '';
+                r.playersSnapshot.forEach(ps => {
+                    let badge = '';
+                    if (ps.isWinner) badge = `<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold rounded-lg">${t.winner}</span>`;
+                    else if (ps.isLoser) badge = `<span class="px-2 py-0.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-[10px] font-extrabold rounded-lg">${t.loser}</span>`;
+
+                    playersHtml += `
+                        <div class="flex items-center justify-between py-1.5 px-3 bg-slate-100 dark:bg-slate-900/80 rounded-xl">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">${ps.name}</span>
+                                ${badge}
+                            </div>
+                            <span class="text-xs font-extrabold text-purple-600 dark:text-purple-400 font-mono">${ps.score}</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="flex flex-col gap-2.5 p-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                            <span class="text-xs font-bold text-purple-600 dark:text-purple-400">Round #${r.roundNumber}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${r.date} ${r.time}</span>
+                        </div>
+                        <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">${t.playerScoresAtEnd}</div>
+                        <div class="flex flex-col gap-1.5">${playersHtml}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function openPlayerHistory(playerId) {
+            activeHistoryPlayerId = playerId;
+            playerHistoryViewMode = 'ops';
+            const modal = document.getElementById('playerHistoryModal');
+            if (modal) modal.classList.remove('hidden');
+            renderPlayerHistoryModalContent();
+        }
+
+        function closePlayerHistoryModal() {
+            const modal = document.getElementById('playerHistoryModal');
+            if (modal) modal.classList.add('hidden');
+            activeHistoryPlayerId = null;
+        }
+
+        function setPlayerHistoryMode(mode) {
+            playerHistoryViewMode = mode;
+            const opsBtn = document.getElementById('toggleOpsBtn');
+            const resBtn = document.getElementById('toggleResBtn');
+
+            if (mode === 'ops') {
+                opsBtn.className = "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm flex items-center justify-center gap-1.5";
+                resBtn.className = "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1.5";
+            } else {
+                resBtn.className = "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm flex items-center justify-center gap-1.5";
+                opsBtn.className = "flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-1.5";
+            }
+            renderPlayerHistoryModalContent();
+        }
+
+        function renderPlayerHistoryModalContent() {
+            const container = document.getElementById('playerHistoryContentList');
+            const titleEl = document.getElementById('modalPlayerTitle');
+            if (!container) return;
+
+            const player = players.find(p => p.id === activeHistoryPlayerId);
+            const t = translations[currentLang];
+            if (!player) return;
+
+            if (titleEl) titleEl.innerText = `${player.name} — History`;
+
+            if (!player.history || player.history.length === 0) {
+                container.innerHTML = `<div class="text-center py-16 text-xs text-slate-400 dark:text-slate-500 font-medium">${t.noPlayerHistory}</div>`;
+                return;
+            }
+
+            let html = '';
+            player.history.forEach((entry, idx) => {
+                if (playerHistoryViewMode === 'ops') {
+                    let badgeColor = 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30';
+                    if (entry.delta < 0) badgeColor = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30';
+
+                    html += `
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                            <div class="flex items-center gap-3">
+                                <span class="px-3 py-1.5 rounded-xl text-xs font-extrabold border ${badgeColor} font-mono">${entry.operation}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white">${entry.desc}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">${entry.time}</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Step #${player.history.length - idx}</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                            <div class="flex flex-col gap-0.5">
+                                <span class="text-xs font-bold text-slate-800 dark:text-white">Score after: ${entry.desc}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">${entry.time}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 bg-purple-600/10 dark:bg-purple-950/50 border border-purple-500/30 px-3 py-1.5 rounded-xl">
+                                <span class="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400">Result:</span>
+                                <span class="text-sm font-extrabold text-purple-700 dark:text-purple-300 font-mono">${entry.resultingScore}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'en') ? 'uk' : 'en';
+            applyLanguage();
+            saveStateToCookies();
+        }
+
+        function applyLanguage() {
+            const t = translations[currentLang];
+            const langLabel = document.getElementById('langLabel');
+            if (langLabel) langLabel.innerText = currentLang.toUpperCase();
+
+            document.querySelectorAll('[data-i18n-history-btn]').forEach(el => el.innerText = t.historyBtn);
+            document.querySelectorAll('[data-i18n-rounds-btn]').forEach(el => el.innerText = t.roundsBtn);
+            document.querySelectorAll('[data-i18n-history-title]').forEach(el => el.innerText = t.historyTitle);
+            document.querySelectorAll('[data-i18n-clear-history]').forEach(el => el.innerText = t.clearHistory);
+            document.querySelectorAll('[data-i18n-leader]').forEach(el => el.innerText = t.leader);
+            document.querySelectorAll('[data-i18n-round-label]').forEach(el => el.innerText = t.roundLabel);
+            document.querySelectorAll('[data-i18n-finish-round]').forEach(el => el.innerText = t.finishRound);
+            document.querySelectorAll('[data-i18n-reset-scores]').forEach(el => el.innerText = t.resetScores);
+            document.querySelectorAll('[data-i18n-add-player]').forEach(el => el.innerText = t.addPlayer);
+            document.querySelectorAll('[data-i18n-calculator-btn]').forEach(el => el.innerText = t.calculatorBtn);
+            document.querySelectorAll('[data-i18n-add-player-title]').forEach(el => el.innerText = t.addPlayerTitle);
+            document.querySelectorAll('[data-i18n-player-name-label]').forEach(el => el.innerText = t.playerNameLabel);
+            document.querySelectorAll('[data-i18n-save]').forEach(el => el.innerText = t.save);
+            document.querySelectorAll('[data-i18n-settings-title]').forEach(el => el.innerText = t.settingsTitle);
+            document.querySelectorAll('[data-i18n-players-list]').forEach(el => el.innerText = t.playersList);
+            document.querySelectorAll('[data-i18n-close]').forEach(el => el.innerText = t.close);
+            document.querySelectorAll('[data-i18n-history-subtitle]').forEach(el => el.innerText = t.historySubtitle);
+            document.querySelectorAll('[data-i18n-mode-ops]').forEach(el => el.innerText = t.modeOps);
+            document.querySelectorAll('[data-i18n-mode-results]').forEach(el => el.innerText = t.modeResults);
+            document.querySelectorAll('[data-i18n-rounds-modal-title]').forEach(el => el.innerText = t.roundsModalTitle);
+            document.querySelectorAll('[data-i18n-rounds-modal-subtitle]').forEach(el => el.innerText = t.roundsModalSubtitle);
+            document.querySelectorAll('[data-i18n-clear-rounds]').forEach(el => el.innerText = t.clearRounds);
+            document.querySelectorAll('[data-i18n-calc-history-title]').forEach(el => el.innerText = t.calcHistoryTitle);
+
+            renderAll();
+            if (activeHistoryPlayerId !== null) renderPlayerHistoryModalContent();
+        }
+
+        function openAddPlayerModal() {
+            const modal = document.getElementById('addPlayerModal');
+            const input = document.getElementById('newPlayerNameInput');
+            if (modal) modal.classList.remove('hidden');
+            if (input) {
+                input.value = `Player ${players.length + 1}`;
+                input.focus();
+            }
+        }
+
+        function closeAddPlayerModal() {
+            const modal = document.getElementById('addPlayerModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function confirmAddPlayer() {
+            const input = document.getElementById('newPlayerNameInput');
+            const name = input && input.value.trim() ? input.value.trim() : `Player ${players.length + 1}`;
+            const colorObj = colorClasses[players.length % colorClasses.length];
+
+            const newPlayer = {
+                id: nextPlayerId++,
+                name: name,
+                score: 0,
+                color: colorObj.id,
+                history: []
+            };
+
+            players.push(newPlayer);
+            const t = translations[currentLang];
+            addActionLog(t.actAdd, newPlayer.name);
+
+            closeAddPlayerModal();
+            renderAll();
+            saveStateToCookies();
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) {
+                modal.classList.toggle('hidden');
+                if (!modal.classList.contains('hidden')) renderSettingsPlayersList();
+            }
+        }
+
+        function renderSettingsPlayersList() {
+            const container = document.getElementById('settingsPlayersList');
+            if (!container) return;
+            if (players.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">No players</div>`;
+                return;
+            }
+
+            let html = '';
+            players.forEach((p, idx) => {
+                html += `
+                    <div class="flex items-center justify-between p-2 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl gap-2">
+                        <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[10px] text-slate-400 font-mono">#${idx + 1}</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[130px]">${p.name}</span>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button onclick="movePlayerOrder(${p.id}, -1)" class="p-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 rounded-lg text-xs" title="Move Up">⬆️</button>
+                            <button onclick="movePlayerOrder(${p.id}, 1)" class="p-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-700 dark:text-slate-300 rounded-lg text-xs" title="Move Down">⬇️</button>
+                            <button onclick="removePlayer(${p.id})" class="px-2 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-lg font-bold transition-all">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function movePlayerOrder(id, direction) {
+            const index = players.findIndex(x => x.id === id);
+            if (index < 0) return;
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= players.length) return;
+
+            const temp = players[index];
+            players[index] = players[newIndex];
+            players[newIndex] = temp;
+
+            renderSettingsPlayersList();
+            renderAll();
+            saveStateToCookies();
+        }
+
+        function removePlayer(id) {
+            const p = players.find(x => x.id === id);
+            players = players.filter(x => x.id !== id);
+            if (p) {
+                const t = translations[currentLang];
+                addActionLog(t.actRemove, p.name);
+            }
+            if (activeHistoryPlayerId === id) closePlayerHistoryModal();
+            renderSettingsPlayersList();
+            renderAll();
+            saveStateToCookies();
+        }
+
+        function showErrorMessage(message) {
+            let toast = document.getElementById('errorToast');
+            if (!toast) {
+                const toastHTML = `
+                    <div id="errorToast" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-rose-600 text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition-all duration-300 opacity-0 pointer-events-none">
+                        <span>⚠️</span>
+                        <span id="errorToastText"></span>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', toastHTML);
+                toast = document.getElementById('errorToast');
+            }
+
+            const textEl = document.getElementById('errorToastText');
+            if (textEl) textEl.innerText = message;
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-1');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-1');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+
+        function checkScoreLimit(p, operationStr) {
+            const t = translations[currentLang];
+            if (p.score < MIN_SCORE || p.score > MAX_SCORE) {
+                p.score = 0;
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                p.history.unshift({
+                    time: timeStr,
+                    operation: 'LIMIT_EXCEEDED',
+                    delta: 0,
+                    desc: `${p.name} limit exceeded (${operationStr}) ➡️ Reset to 0`,
+                    resultingScore: 0
+                });
+                addActionLog("Limit Exceeded", `${p.name} score out of bounds.`);
+                showErrorMessage(t.limitError);
+                saveStateToCookies();
+                return true;
+            }
+            return false;
+        }
+
+        function resetPlayerScore(id) {
+            const p = players.find(x => x.id === id);
+            if (p) {
+                p.score = 0;
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                p.history.unshift({
+                    time: timeStr,
+                    operation: 'RESET',
+                    delta: 0,
+                    desc: `${p.name} score reset to 0`,
+                    resultingScore: 0
+                });
+
+                const t = translations[currentLang];
+                addActionLog(t.actResetSingle, `${p.name} set to 0`);
+                
+                const card = document.querySelector(`[data-player-id="${id}"]`);
+                if (card) {
+                    card.classList.add('pulse-active');
+                    setTimeout(() => card.classList.remove('pulse-active'), 400);
+                }
+            }
+            renderAll();
+            if (activeHistoryPlayerId === id) renderPlayerHistoryModalContent();
+            saveStateToCookies();
+        }
+
+        function resetAllScores() {
+            players.forEach(p => {
+                p.score = 0;
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                p.history.unshift({
+                    time: timeStr,
+                    operation: 'RESET',
+                    delta: 0,
+                    desc: `All scores reset`,
+                    resultingScore: 0
+                });
+            });
+            const t = translations[currentLang];
+            addActionLog(t.actReset, "All scores set to 0");
+            renderAll();
+            if (activeHistoryPlayerId !== null) renderPlayerHistoryModalContent();
+            saveStateToCookies();
+        }
+
+        function renderAll() {
+            const grid = document.getElementById('playersGrid');
+            const leaderDisplay = document.getElementById('leaderNameDisplay');
+            const roundDisplay = document.getElementById('currentRoundDisplay');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            if (roundDisplay) roundDisplay.innerText = currentRound;
+
+            if (players.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400 text-xs font-medium">No players added yet. Click "Add Player" below!</div>`;
+                if (leaderDisplay) leaderDisplay.innerText = '-';
+                return;
+            }
+
+            let leader = players[0];
+            players.forEach(p => {
+                if (p.score > leader.score) leader = p;
+            });
+            if (leaderDisplay) leaderDisplay.innerText = `${leader.name} (${leader.score})`;
+
+            players.forEach((player, index) => {
+                const colorObj = colorClasses.find(c => c.id === player.color) || colorClasses[0];
+
+                const card = document.createElement('div');
+                card.className = `w-full bg-white/90 dark:bg-slate-900/90 border ${colorObj.bg} rounded-2xl p-2.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3 relative shadow-sm transition-all group`;
+                card.dataset.playerId = player.id;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1 min-w-0">
+                            <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">#${index + 1}</span>
+                            <span class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white truncate">${player.name}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openPlayerHistory(${player.id})" class="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-slate-200/80 dark:bg-slate-800 hover:bg-purple-600 hover:text-white text-slate-600 dark:text-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg transition-all shadow-sm flex items-center gap-0.5 shrink-0" title="Player History">📜</button>
+                            <button onclick="resetPlayerScore(${player.id})" class="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-slate-200/80 dark:bg-slate-800 hover:bg-rose-600 hover:text-white text-slate-600 dark:text-slate-300 text-[10px] sm:text-[11px] font-semibold rounded-lg transition-all shadow-sm flex items-center gap-0.5 shrink-0" title="Reset score to 0">🔄 0</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center py-1 sm:py-2">
+                        <span class="text-3xl sm:text-4xl font-extrabold text-purple-600 dark:text-purple-400 tracking-tight font-mono">${player.score}</span>
+                    </div>
+
+                    <div class="grid grid-cols-5 gap-1 pt-1">
+                        <button onclick="promptArithmetic(${player.id}, '+')" class="py-1.5 sm:py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-md shadow-purple-600/20 active:scale-95">+</button>
+                        <button onclick="promptArithmetic(${player.id}, '-')" class="py-1.5 sm:py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] sm:text-xs font-bold transition-all active:scale-95">-</button>
+                        <button onclick="promptArithmetic(${player.id}, '*')" class="py-1.5 sm:py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] sm:text-xs font-bold transition-all active:scale-95">×</button>
+                        <button onclick="promptArithmetic(${player.id}, '/')" class="py-1.5 sm:py-2 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-[11px] sm:text-xs font-bold transition-all active:scale-95">÷</button>
+                        <button onclick="promptArithmetic(${player.id}, '=')" class="py-1.5 sm:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95">=</button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        let pendingArithmeticPlayerId = null;
+        let pendingArithmeticOperator = null;
+
+        function promptArithmetic(id, operator) {
+            pendingArithmeticPlayerId = id;
+            pendingArithmeticOperator = operator;
+            
+            let modal = document.getElementById('arithmeticPromptModal');
+            if (!modal) {
+                const modalHTML = `
+                    <div id="arithmeticPromptModal" class="fixed inset-0 pointer-events-none z-[90] flex items-center justify-center hidden bg-black/50 backdrop-blur-xs p-4">
+                        <div class="pointer-events-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-3xl max-w-xs w-full p-5 shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+                            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                                <h3 id="arithmeticModalTitle" class="text-sm font-bold text-slate-800 dark:text-white">Enter value</h3>
+                                <button onclick="closeArithmeticModal()" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-1">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label id="arithmeticLabel" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Value</label>
+                                <input type="number" id="arithmeticValueInput" value="0" step="any" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-sm font-mono text-slate-800 dark:text-white focus:outline-none focus:border-purple-500 font-medium">
+                            </div>
+                            <div class="flex gap-2 mt-1">
+                                <button onclick="confirmArithmetic()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl text-xs transition-all shadow-md">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                modal = document.getElementById('arithmeticPromptModal');
+            }
+
+            const titleEl = document.getElementById('arithmeticModalTitle');
+            const labelEl = document.getElementById('arithmeticLabel');
+            const inputEl = document.getElementById('arithmeticValueInput');
+
+            const opNames = { '+': 'Addition (+)', '-': 'Subtraction (-)', '*': 'Multiplication (*)', '/': 'Division (/)', '=': 'Set Score (=)' };
+            if (titleEl) titleEl.innerText = opNames[operator] || 'Operation';
+            if (labelEl) labelEl.innerText = operator === '=' ? 'Set score to' : `Enter number for ${operator}`;
+            if (inputEl) {
+                inputEl.value = (operator === '*' || operator === '/') ? '2' : (operator === '=' ? '0' : '1');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    inputEl.focus();
+                    inputEl.select();
+                }, 50);
+            }
+        }
+
+        function closeArithmeticModal() {
+            const modal = document.getElementById('arithmeticPromptModal');
+            if (modal) modal.classList.add('hidden');
+            pendingArithmeticPlayerId = null;
+            pendingArithmeticOperator = null;
+        }
+
+        function confirmArithmetic() {
+            const inputEl = document.getElementById('arithmeticValueInput');
+            if (!inputEl || pendingArithmeticPlayerId === null || !pendingArithmeticOperator) return;
+
+            const val = parseFloat(inputEl.value);
+            if (isNaN(val)) {
+                closeArithmeticModal();
+                return;
+            }
+
+            const p = players.find(x => x.id === pendingArithmeticPlayerId);
+            if (p) {
+                let operationStr = '';
+
+                if (pendingArithmeticOperator === '+') {
+                    p.score += val;
+                    operationStr = `+${val}`;
+                } else if (pendingArithmeticOperator === '-') {
+                    p.score -= val;
+                    operationStr = `-${val}`;
+                } else if (pendingArithmeticOperator === '*') {
+                    p.score *= val;
+                    operationStr = `*${val}`;
+                } else if (pendingArithmeticOperator === '/') {
+                    if (val === 0) {
+                        closeArithmeticModal();
+                        return;
+                    }
+                    p.score = parseFloat((p.score / val).toFixed(2));
+                    operationStr = `/${val}`;
+                } else if (pendingArithmeticOperator === '=') {
+                    p.score = val;
+                    operationStr = `=${val}`;
+                }
+
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                if (!checkScoreLimit(p, operationStr)) {
+                    p.history.unshift({
+                        time: timeStr,
+                        operation: operationStr,
+                        delta: val,
+                        desc: `${p.name} (${operationStr})`,
+                        resultingScore: p.score
+                    });
+
+                    const t = translations[currentLang];
+                    addActionLog(t.actScore, `${p.name} (${operationStr}) ➡️ Score: ${p.score}`);
+                }
+                
+                const card = document.querySelector(`[data-player-id="${pendingArithmeticPlayerId}"]`);
+                if (card) {
+                    card.classList.add('pulse-active');
+                    setTimeout(() => card.classList.remove('pulse-active'), 400);
+                }
+            }
+
+            closeArithmeticModal();
+            renderAll();
+            if (activeHistoryPlayerId === pendingArithmeticPlayerId) renderPlayerHistoryModalContent();
+            saveStateToCookies();
+        }
+
+        window.onload = function() {
+            loadStateFromCookies();
+            applyLanguage();
+        };
+    </script>
+</body>
+</html>
